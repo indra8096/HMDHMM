@@ -1,18 +1,23 @@
-import express, { Request, Response } from 'express';
-import bodyParser from 'body-parser';
+import express from 'express';
+import cors from 'cors';
+import multer from 'multer';
 import { exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { promisify } from 'util';
 import { TestForRequest, GenSeqRequest, TestVitRequest, EstHMMRequest, ConvertRequest, APIResponse } from './types/hmm.types';
 
+const execAsync = promisify(exec);
 const app = express();
+const upload = multer({ dest: 'uploads/' });
+
+app.use(cors());
+app.use(express.json());
 
 // Configuration
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 app.use(express.static(path.join(__dirname, '../public')));
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json({ limit: '50mb' }));
 
 // Dossier temporaire pour les fichiers
 const tempDir = path.join(__dirname, '../temp');
@@ -28,213 +33,124 @@ const createTempFile = (content: string, extension: string): string => {
     return filePath;
 };
 
+// Fonction utilitaire pour exécuter une commande UMDHMM
+async function executeUMDHMM(command: string): Promise<string> {
+    try {
+        const { stdout, stderr } = await execAsync(command);
+        if (stderr) {
+            console.error('Stderr:', stderr);
+        }
+        return stdout;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+// Gestionnaire pour les fichiers temporaires
+async function handleFiles(files: Express.Multer.File[], options: string = ''): Promise<{ modelPath: string; sequencePath: string }> {
+    const modelPath = path.join('uploads', `${files[0].filename}.hmm`);
+    const sequencePath = path.join('uploads', `${files[1].filename}.seq`);
+    
+    await Promise.all([
+        fs.promises.rename(files[0].path, modelPath),
+        fs.promises.rename(files[1].path, sequencePath)
+    ]);
+
+    return { modelPath, sequencePath };
+}
+
 // Routes
-app.get('/', (_req: Request, res: Response) => {
+app.get('/', (_req: express.Request, res: express.Response) => {
     res.render('index');
 });
 
-// API pour exécuter testfor (calcul des alpha)
-app.post('/api/testfor', async (req: Request<{}, {}, TestForRequest>, res: Response<APIResponse>) => {
+// Route pour testfor
+app.post('/api/hmm/testfor', upload.array('files'), async (req, res) => {
     try {
-        const { hmmContent, seqContent } = req.body;
-        const hmmFile = createTempFile(hmmContent, '.hmm');
-        const seqFile = createTempFile(seqContent, '.seq');
-
-        const result = await new Promise<string>((resolve, reject) => {
-            exec(`./testfor ${hmmFile} ${seqFile}`, (error, stdout, stderr) => {
-                // Nettoyage des fichiers temporaires
-                fs.unlinkSync(hmmFile);
-                fs.unlinkSync(seqFile);
-                
-                if (error) reject(error);
-                resolve(stdout);
-            });
-        });
-        
-        res.json({
-            success: true,
-            data: result
-        });
+        const { modelPath, sequencePath } = await handleFiles(req.files as Express.Multer.File[]);
+        const output = await executeUMDHMM(`./testfor -v ${modelPath} ${sequencePath}`);
+        res.json({ output });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Une erreur est survenue'
-        });
+        res.status(500).json({ error: 'Erreur lors de l\'exécution de testfor' });
     }
 });
 
-// API pour exécuter genseq
-app.post('/api/genseq', async (req: Request<{}, {}, GenSeqRequest>, res: Response<APIResponse>) => {
+// Route pour testvit
+app.post('/api/hmm/testvit', upload.array('files'), async (req, res) => {
     try {
-        const { hmmContent, length, seed } = req.body;
-        const hmmFile = createTempFile(hmmContent, '.hmm');
-        const outputFile = `sequence_${Date.now()}.seq`;
-        const outputPath = path.join(tempDir, outputFile);
-
-        const command = seed 
-            ? `./genseq ${hmmFile} ${length} ${seed} > ${outputPath}`
-            : `./genseq ${hmmFile} ${length} > ${outputPath}`;
-
-        await new Promise<void>((resolve, reject) => {
-            exec(command, (error) => {
-                fs.unlinkSync(hmmFile);
-                if (error) reject(error);
-                resolve();
-            });
-        });
-
-        const generatedContent = fs.readFileSync(outputPath, 'utf-8');
-        fs.unlinkSync(outputPath);
-        
-        res.json({
-            success: true,
-            data: generatedContent,
-            generatedFile: outputFile
-        });
+        const { modelPath, sequencePath } = await handleFiles(req.files as Express.Multer.File[]);
+        const output = await executeUMDHMM(`./testvit -v ${modelPath} ${sequencePath}`);
+        res.json({ output });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Une erreur est survenue'
-        });
+        res.status(500).json({ error: 'Erreur lors de l\'exécution de testvit' });
     }
 });
 
-// API pour exécuter testvit
-app.post('/api/testvit', async (req: Request<{}, {}, TestVitRequest>, res: Response<APIResponse>) => {
+// Route pour testbw
+app.post('/api/hmm/testbw', upload.array('files'), async (req, res) => {
     try {
-        const { hmmContent, seqContent } = req.body;
-        const hmmFile = createTempFile(hmmContent, '.hmm');
-        const seqFile = createTempFile(seqContent, '.seq');
-
-        const result = await new Promise<string>((resolve, reject) => {
-            exec(`./testvit ${hmmFile} ${seqFile}`, (error, stdout, stderr) => {
-                fs.unlinkSync(hmmFile);
-                fs.unlinkSync(seqFile);
-                
-                if (error) reject(error);
-                resolve(stdout);
-            });
-        });
-        
-        res.json({
-            success: true,
-            data: result
-        });
+        const { modelPath, sequencePath } = await handleFiles(req.files as Express.Multer.File[]);
+        const { iterations = 100, threshold = 0.001 } = req.body;
+        const output = await executeUMDHMM(
+            `./testbw -i ${iterations} -t ${threshold} -v ${modelPath} ${sequencePath}`
+        );
+        res.json({ output });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Une erreur est survenue'
-        });
+        res.status(500).json({ error: 'Erreur lors de l\'exécution de testbw' });
     }
 });
 
-// API pour exécuter esthmm
-app.post('/api/esthmm', async (req: Request<{}, {}, EstHMMRequest>, res: Response<APIResponse>) => {
+// Route pour esthmm
+app.post('/api/hmm/esthmm', upload.array('files'), async (req, res) => {
     try {
-        const { seqContent, N, M } = req.body;
-        const seqFile = createTempFile(seqContent, '.seq');
-        const outputFile = `model_${Date.now()}.hmm`;
-        const outputPath = path.join(tempDir, outputFile);
-
-        const result = await new Promise<string>((resolve, reject) => {
-            exec(`./esthmm -N ${N} -M ${M} ${seqFile} > ${outputPath}`, (error, stdout, stderr) => {
-                fs.unlinkSync(seqFile);
-                if (error) reject(error);
-                resolve(stdout);
-            });
-        });
-
-        const generatedContent = fs.readFileSync(outputPath, 'utf-8');
-        fs.unlinkSync(outputPath);
-        
-        res.json({
-            success: true,
-            data: generatedContent,
-            generatedFile: outputFile
-        });
+        const { modelPath, sequencePath } = await handleFiles(req.files as Express.Multer.File[]);
+        const output = await executeUMDHMM(`./esthmm -v ${modelPath} ${sequencePath}`);
+        res.json({ output });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Une erreur est survenue'
-        });
+        res.status(500).json({ error: 'Erreur lors de l\'exécution de esthmm' });
     }
 });
 
-// API pour convertir numérique vers FASTA
-app.post('/api/convert/to-fasta', async (req: Request<{}, {}, ConvertRequest>, res: Response<APIResponse>) => {
+// Route pour genseq
+app.post('/api/hmm/genseq', upload.single('model'), async (req, res) => {
     try {
-        const { content, sequenceName } = req.body;
-        const inputFile = createTempFile(content, '.seq');
-        const outputFile = `fasta_${Date.now()}.fa`;
-        const outputPath = path.join(tempDir, outputFile);
-
-        const command = sequenceName
-            ? `python3 src/converters/converter.py to-fasta ${inputFile} ${outputPath} ${sequenceName}`
-            : `python3 src/converters/converter.py to-fasta ${inputFile} ${outputPath}`;
-
-        await new Promise<void>((resolve, reject) => {
-            exec(command, (error) => {
-                fs.unlinkSync(inputFile);
-                if (error) reject(error);
-                resolve();
-            });
-        });
-
-        const convertedContent = fs.readFileSync(outputPath, 'utf-8');
-        fs.unlinkSync(outputPath);
+        const modelPath = path.join('uploads', `${req.file?.filename}.hmm`);
+        await fs.promises.rename(req.file?.path as string, modelPath);
         
-        res.json({
-            success: true,
-            data: convertedContent,
-            generatedFile: outputFile
-        });
+        const length = req.body.length || 100;
+        const output = await executeUMDHMM(`./genseq ${modelPath} ${length}`);
+        res.json({ output });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Une erreur est survenue'
-        });
+        res.status(500).json({ error: 'Erreur lors de l\'exécution de genseq' });
     }
 });
 
-// API pour convertir FASTA vers numérique
-app.post('/api/convert/to-numeric', async (req: Request<{}, {}, ConvertRequest>, res: Response<APIResponse>) => {
+// Nettoyage périodique des fichiers temporaires
+setInterval(async () => {
     try {
-        const { content } = req.body;
-        const inputFile = createTempFile(content, '.fa');
-        const outputFile = `numeric_${Date.now()}.seq`;
-        const outputPath = path.join(tempDir, outputFile);
-
-        await new Promise<void>((resolve, reject) => {
-            exec(`python3 src/converters/converter.py to-numeric ${inputFile} ${outputPath}`, (error) => {
-                fs.unlinkSync(inputFile);
-                if (error) reject(error);
-                resolve();
-            });
-        });
-
-        const convertedContent = fs.readFileSync(outputPath, 'utf-8');
-        fs.unlinkSync(outputPath);
-        
-        res.json({
-            success: true,
-            data: convertedContent,
-            generatedFile: outputFile
-        });
+        const files = await fs.promises.readdir('uploads');
+        const now = Date.now();
+        for (const file of files) {
+            const filePath = path.join('uploads', file);
+            const stats = await fs.promises.stat(filePath);
+            // Supprime les fichiers de plus de 1 heure
+            if (now - stats.mtimeMs > 3600000) {
+                await fs.promises.unlink(filePath);
+            }
+        }
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Une erreur est survenue'
-        });
+        console.error('Erreur lors du nettoyage:', error);
     }
-});
+}, 3600000); // Vérifie toutes les heures
 
 // Route pour la page DNA
-app.get('/dna', (_req: Request, res: Response) => {
+app.get('/dna', (_req: express.Request, res: express.Response) => {
     res.render('dna');
 });
 
 // API pour la conversion ADN
-app.post('/api/dna/convert', async (req: Request<{}, {}, ConvertRequest>, res: Response<APIResponse>) => {
+app.post('/api/dna/convert', async (req: express.Request<{}, {}, ConvertRequest>, res: express.Response<APIResponse>) => {
     try {
         const { content, sequenceName } = req.body;
         const inputFile = createTempFile(content, '.txt');
@@ -265,7 +181,7 @@ app.post('/api/dna/convert', async (req: Request<{}, {}, ConvertRequest>, res: R
 });
 
 // Port d'écoute
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Serveur démarré sur le port ${PORT}`);
 }); 

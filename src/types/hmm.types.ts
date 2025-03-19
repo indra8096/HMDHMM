@@ -44,4 +44,40 @@ export interface APIResponse {
   data?: any;
   error?: string;
   generatedFile?: string;
+}
+
+export interface HMMDefinition {
+    N: number;  // Nombre d'états cachés
+    M: number;  // Nombre de symboles observables
+    A: number[][]; // Matrice de transition
+    B: number[][]; // Matrice d'émission
+    pi: number[]; // Distribution initiale
+}
+
+export interface HMMProblem {
+    title: string;
+    description: string;
+    algorithm: string;
+    complexity: string;
+    details: string[];
+}
+
+export interface HMMApplication {
+    title: string;
+    description: string;
+}
+
+export interface HMMFormProps {
+    id: string;
+    title: string;
+    onSubmit: (data: FormData) => Promise<void>;
+}
+
+export interface FormData {
+    hmmFile?: File;
+    seqFile?: File;
+    length?: number;
+    seed?: number;
+    N?: number;
+    M?: number;
 } 
