@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UMDHMM GUI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">UMDHMM GUI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#hmm-tools">Outils HMM</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#converters">Convertisseurs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dna">Conversion ADN</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <!-- Section Outils HMM -->
+        <section id="hmm-tools">
+            <h2 class="mb-4">Outils HMM</h2>
+            <div class="row">
+                <!-- Les cartes existantes pour TestFor, GenSeq, TestVit, et EstHMM -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0">Calcul des Alpha (TestFor)</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="testForForm">
+                                <div class="mb-3">
+                                    <label for="testForHmmFile" class="form-label">Fichier HMM</label>
+                                    <input type="file" class="form-control" id="testForHmmFile" required accept=".hmm">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="testForSeqFile" class="form-label">Fichier Séquence</label>
+                                    <input type="file" class="form-control" id="testForSeqFile" required accept=".seq">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Calculer</button>
+                            </form>
+                            <div id="testForResult" class="mt-3 result-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0">Génération de Séquence</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="genSeqForm">
+                                <div class="mb-3">
+                                    <label for="genSeqHmmFile" class="form-label">Fichier HMM</label>
+                                    <input type="file" class="form-control" id="genSeqHmmFile" required accept=".hmm">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="seqLength" class="form-label">Longueur de la séquence</label>
+                                    <input type="number" class="form-control" id="seqLength" required min="1" value="100">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="seed" class="form-label">Graine aléatoire (optionnel)</label>
+                                    <input type="number" class="form-control" id="seed" min="1">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Générer</button>
+                            </form>
+                            <div id="genSeqResult" class="mt-3 result-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0">Estimation Viterbi</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="testVitForm">
+                                <div class="mb-3">
+                                    <label for="testVitHmmFile" class="form-label">Fichier HMM</label>
+                                    <input type="file" class="form-control" id="testVitHmmFile" required accept=".hmm">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="testVitSeqFile" class="form-label">Fichier Séquence</label>
+                                    <input type="file" class="form-control" id="testVitSeqFile" required accept=".seq">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Estimer</button>
+                            </form>
+                            <div id="testVitResult" class="mt-3 result-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0">Estimation du Modèle HMM</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="estHmmForm">
+                                <div class="mb-3">
+                                    <label for="estHmmSeqFile" class="form-label">Fichier Séquence</label>
+                                    <input type="file" class="form-control" id="estHmmSeqFile" required accept=".seq">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="numStates" class="form-label">Nombre d'états (N)</label>
+                                    <input type="number" class="form-control" id="numStates" required min="1" value="2">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="alphabetSize" class="form-label">Taille de l'alphabet (M)</label>
+                                    <input type="number" class="form-control" id="alphabetSize" required min="1" value="2">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Estimer</button>
+                            </form>
+                            <div id="estHmmResult" class="mt-3 result-box"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Convertisseurs -->
+        <section id="converters" class="mt-5">
+            <h2 class="mb-4">Convertisseurs</h2>
+            <div class="row">
+                <!-- Conversion Numérique vers FASTA -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0">Numérique vers FASTA</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="numToFastaForm">
+                                <div class="mb-3">
+                                    <label for="numericFile" class="form-label">Fichier numérique</label>
+                                    <input type="file" class="form-control" id="numericFile" required accept=".seq,.txt">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="seqName" class="form-label">Nom de la séquence</label>
+                                    <input type="text" class="form-control" id="seqName" value="seq">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Convertir</button>
+                            </form>
+                            <div id="numToFastaResult" class="mt-3 result-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversion FASTA vers Numérique -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="h5 mb-0">FASTA vers Numérique</h2>
+                        </div>
+                        <div class="card-body">
+                            <form id="fastaToNumForm">
+                                <div class="mb-3">
+                                    <label for="fastaFile" class="form-label">Fichier FASTA</label>
+                                    <input type="file" class="form-control" id="fastaFile" required accept=".fasta,.fa">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Convertir</button>
+                            </form>
+                            <div id="fastaToNumResult" class="mt-3 result-box"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html> 

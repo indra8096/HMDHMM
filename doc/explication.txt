@@ -1,0 +1,19 @@
+M = 2 observations --> Table des émissions
+N = 3 
+
+############################################################
+
+./testfor   --> permet de calculer les Alphas
+
+On peut le faire pour nos fichiers excel 
+M= mes états d'émissions (B)
+N= mes etats d'obs (A)
+
+
+############################################################
+./genseq    --> permet de générer une séquence d'observation à partir d'un modèle
+./genseq -T 20 test.hmm -S 2435 
+
+# -S permet de lui spécifier une graine pour la 
+sauvegarde afin de reproduire exactement le meme resultat
+# T= Longueur 
