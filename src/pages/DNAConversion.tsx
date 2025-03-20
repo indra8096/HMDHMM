@@ -83,6 +83,35 @@ ATCGATCG...`}
                             </div>
                         </div>
                     </div>
+                    <div className="row mt-4">
+                        <div className="col-12">
+                            <div className="card">
+                                <div className="card-header">
+                                    <h2 className="h5 mb-0">Et si on aligne tous cela?</h2>
+                                </div>
+                                <div className="card-body">
+                                    <h3 className="h6">Protéines/ADN</h3>
+                                    <form id="fastaAlignNumForm">
+                                        <div className="mb-3">
+                                            <label htmlFor="fastaFile" className="form-label">Fichier FASTA</label>
+                                            <input type="file" className="form-control" id="fastaFile" required accept=".fasta,.fa" />
+                                        </div>
+                                        <button type="submit" className="btn btn-primary">
+                                            <i className="fas fa-calculator me-2"></i>
+                                            Aligner
+                                        </button>
+                                        
+                                    </form>
+
+                                    
+                                    <pre className="bg-light p-3 rounded">
+                                        {`>Nom_sequence
+ATCGATCG...`}
+                                    </pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </main>
         </>

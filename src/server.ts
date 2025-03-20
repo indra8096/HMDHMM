@@ -5,7 +5,7 @@ import { exec } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { promisify } from 'util';
-import { TestForRequest, GenSeqRequest, TestVitRequest, EstHMMRequest, ConvertRequest, APIResponse } from './types/hmm.types';
+import { ConvertRequest, APIResponse } from './types/hmm.types';
 
 const execAsync = promisify(exec);
 const app = express();
@@ -123,6 +123,69 @@ app.post('/api/hmm/genseq', upload.single('model'), async (req, res) => {
         res.json({ output });
     } catch (error) {
         res.status(500).json({ error: 'Erreur lors de l\'exécution de genseq' });
+    }
+});
+
+// Route pour l'alignement des séquences
+app.post('/api/hmm/align', upload.single('sequence'), async (req, res) => {
+    try {
+        if (!req.file) {
+            throw new Error('Le fichier de séquence est requis');
+        }
+
+        console.log('Fichier reçu:', req.file);
+        
+        // Créer le dossier uploads s'il n'existe pas
+        if (!fs.existsSync('uploads')) {
+            fs.mkdirSync('uploads');
+        }
+
+        const seqPath = path.join('uploads', `${req.file.filename}.fasta`);
+        await fs.promises.rename(req.file.path, seqPath);
+        console.log('Fichier renommé en:', seqPath);
+
+        // Utilise le chemin absolu pour align_sequence
+        const toolsDir = path.join(__dirname, '../tools');
+        const alignToolPath = path.join(toolsDir, 'align_sequence');
+        console.log('Chemin de l\'outil:', alignToolPath);
+        console.log('Dossier actuel:', __dirname);
+        console.log('Commande complète:', `${alignToolPath} ${seqPath}`);
+
+        // Vérifie si l'exécutable existe
+        if (!fs.existsSync(alignToolPath)) {
+            throw new Error(`L'exécutable ${alignToolPath} n'existe pas`);
+        }
+
+        // Rend l'exécutable exécutable si nécessaire
+        await execAsync(`chmod +x ${alignToolPath}`);
+
+        const { stdout, stderr } = await execAsync(`${alignToolPath} ${seqPath}`);
+        
+        if (stderr) {
+            console.error('Stderr:', stderr);
+        }
+
+        console.log('Sortie:', stdout);
+
+        res.json({ 
+            output: stdout,
+            error: stderr || null
+        });
+
+    } catch (error) {
+        console.error('Erreur complète:', error);
+        res.status(500).json({ 
+            error: 'Erreur lors de la conversion de la séquence',
+            details: error instanceof Error ? error.message : 'Erreur inconnue'
+        });
+    } finally {
+        // Nettoyage du fichier temporaire
+        if (req.file) {
+            const seqPath = path.join('uploads', `${req.file.filename}.fasta`);
+            fs.unlink(seqPath, (err) => {
+                if (err) console.error('Erreur lors de la suppression du fichier:', err);
+            });
+        }
     }
 });
 

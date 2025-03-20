@@ -15,6 +15,14 @@ export const HMMTools: React.FC = () => {
         testbw: { model: null, sequence: null },
         esthmm: { model: null, sequence: null }
     });
+    const [alignmentFiles, setAlignmentFiles] = useState<{
+        sequence: File | null;
+        states: File | null;
+    }>({
+        sequence: null,
+        states: null
+    });
+    const [sequenceFile, setSequenceFile] = useState<File | null>(null);
 
     const handleFileChange = (tool: string, type: 'model' | 'sequence', file: File | null) => {
         setSelectedFiles(prev => ({
@@ -40,8 +48,8 @@ export const HMMTools: React.FC = () => {
         }
 
         const formData = new FormData();
-        formData.append('model', files.model);
-        formData.append('sequence', files.sequence);
+        formData.append('files', files.model);
+        formData.append('files', files.sequence);
         formData.append('options', options);
 
         try {
@@ -51,19 +59,41 @@ export const HMMTools: React.FC = () => {
             });
             
             const data = await response.json();
-            setResults(prev => ({
-                ...prev,
-                [tool]: {
-                    output: data.output,
-                    error: data.error
-                }
-            }));
+
+            if (tool === 'testvit' && !data.error) {
+                const alignFormData = new FormData();
+                alignFormData.append('files', files.sequence);
+                alignFormData.append('files', new File([data.output], 'states.sta'));
+
+                const alignResponse = await fetch('/api/hmm/align', {
+                    method: 'POST',
+                    body: alignFormData
+                });
+
+                const alignData = await alignResponse.json();
+                
+                setResults(prev => ({
+                    ...prev,
+                    [tool]: {
+                        output: `Résultat Viterbi:\n${data.output}\n\nAlignement:\n${alignData.output}`,
+                        error: alignData.error
+                    }
+                }));
+            } else {
+                setResults(prev => ({
+                    ...prev,
+                    [tool]: {
+                        output: data.output,
+                        error: data.error
+                    }
+                }));
+            }
         } catch (error) {
             setResults(prev => ({
                 ...prev,
                 [tool]: {
                     output: '',
-                    error: 'Erreur lors de l\'exécution de la commande'
+                    error: `Erreur lors de l'exécution de ${tool}`
                 }
             }));
         }
@@ -99,12 +129,220 @@ export const HMMTools: React.FC = () => {
         }
     };
 
+    const handleAlignmentFileChange = (type: 'sequence' | 'states', file: File | null) => {
+        setAlignmentFiles(prev => ({
+            ...prev,
+            [type]: file
+        }));
+    };
+
+    const handleAlignment = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!alignmentFiles.sequence || !alignmentFiles.states) {
+            setResults(prev => ({
+                ...prev,
+                alignment: {
+                    output: '',
+                    error: 'Veuillez sélectionner les deux fichiers requis'
+                }
+            }));
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('sequence', alignmentFiles.sequence);
+        formData.append('states', alignmentFiles.states);
+
+        try {
+            const response = await fetch('/api/hmm/align', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            setResults(prev => ({
+                ...prev,
+                alignment: {
+                    output: data.output,
+                    error: data.error
+                }
+            }));
+        } catch (error) {
+            setResults(prev => ({
+                ...prev,
+                alignment: {
+                    output: '',
+                    error: 'Erreur lors de l\'alignement'
+                }
+            }));
+        }
+    };
+
+    const handleSequenceFileChange = (file: File | null) => {
+        setSequenceFile(file);
+    };
+
+    const handleConversion = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!sequenceFile) {
+            setResults(prev => ({
+                ...prev,
+                conversion: {
+                    output: '',
+                    error: 'Veuillez sélectionner un fichier de séquence'
+                }
+            }));
+            return;
+        }
+
+        // Réinitialise les résultats précédents
+        setResults(prev => ({
+            ...prev,
+            conversion: {
+                output: 'Chargement...',
+                error: undefined
+            }
+        }));
+
+        const formData = new FormData();
+        formData.append('sequence', sequenceFile);
+
+        try {
+            console.log('Envoi du fichier:', sequenceFile.name, 'taille:', sequenceFile.size);
+            
+            // Utilise l'URL complète avec le port
+            const response = await fetch('http://localhost:3001/api/hmm/align', {
+                method: 'POST',
+                body: formData
+            });
+            
+            console.log('Statut de la réponse:', response.status);
+            const data = await response.json();
+            console.log('Réponse reçue:', data);
+            
+            if (!response.ok) {
+                throw new Error(data.error || `Erreur ${response.status}`);
+            }
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            setResults(prev => ({
+                ...prev,
+                conversion: {
+                    output: data.output || 'Aucune sortie reçue',
+                    error: undefined
+                }
+            }));
+        } catch (error) {
+            console.error('Erreur complète:', error);
+            setResults(prev => ({
+                ...prev,
+                conversion: {
+                    output: '',
+                    error: error instanceof Error ? error.message : 'Erreur lors de la conversion'
+                }
+            }));
+        }
+    };
+
     return (
         <>
             <Navbar />
             <main className="container py-5">
                 <h1 className="mb-4">Outils UMDHMM</h1>
                 <div className="row g-4">
+                    {/* Sequence Conversion Tool */}
+                    <div className="col-md-6">
+                        <Card>
+                            <h2 className="h4 mb-3">
+                                <i className="fas fa-exchange-alt me-2"></i>
+                                Conversion Séquence → Numérique
+                            </h2>
+                            <p className="text-muted mb-3">
+                                Convertit une séquence d'acides aminés en leurs indices numériques correspondants.
+                                Affiche l'alignement et la correspondance.
+                            </p>
+                            <form onSubmit={handleConversion}>
+                                <div className="mb-3">
+                                    <label className="form-label">Fichier FASTA</label>
+                                    <input 
+                                        type="file" 
+                                        className="form-control" 
+                                        accept=".fasta,.fa,.seq"
+                                        onChange={(e) => handleSequenceFileChange(e.target.files?.[0] || null)}
+                                    />
+                                </div>
+                                <button type="submit" className="btn btn-primary">
+                                    <i className="fas fa-align-left me-2"></i>
+                                    Aligner
+                                </button>
+                            </form>
+                            {results.conversion && (
+                                <div className="mt-4">
+                                    {results.conversion.error ? (
+                                        <div className="alert alert-danger">
+                                            {results.conversion.error}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-dark text-light p-3 rounded" style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+                                            {results.conversion.output}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+
+                    {/* Alignment Tool */}
+                    <div className="col-md-6">
+                        <Card>
+                            <h2 className="h4 mb-3">
+                                <i className="fas fa-align-left me-2"></i>
+                                Alignement Séquence-États
+                            </h2>
+                            <p className="text-muted mb-3">
+                                Aligne une séquence de protéines avec ses états correspondants.
+                                Affiche l'alignement dans un format lisible.
+                            </p>
+                            <form onSubmit={handleAlignment}>
+                                <div className="mb-3">
+                                    <label className="form-label">Fichier séquence (.seq)</label>
+                                    <input 
+                                        type="file" 
+                                        className="form-control" 
+                                        accept=".seq"
+                                        onChange={(e) => handleAlignmentFileChange('sequence', e.target.files?.[0] || null)}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="form-label">Fichier états (.sta)</label>
+                                    <input 
+                                        type="file" 
+                                        className="form-control" 
+                                        accept=".sta"
+                                        onChange={(e) => handleAlignmentFileChange('states', e.target.files?.[0] || null)}
+                                    />
+                                </div>
+                                <button type="submit" className="btn btn-primary w-100">
+                                    Aligner
+                                </button>
+                            </form>
+                            {results.alignment && (
+                                <div className="mt-3">
+                                    {results.alignment.error ? (
+                                        <div className="alert alert-danger">{results.alignment.error}</div>
+                                    ) : (
+                                        <div className="terminal bg-dark text-light p-3 rounded" style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+                                            {results.alignment.output}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+
                     {/* Forward Algorithm */}
                     <div className="col-md-6">
                         <Card>
