@@ -1,54 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import './Navbar.css';
+import React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
-interface NavItem {
-    title: string;
-    path: string;
-    icon: string;
-}
-
-const navItems: NavItem[] = [
-    {
-        title: 'Accueil',
-        path: '/',
-        icon: 'fas fa-home'
-    },
-    {
-        title: 'Outils HMM',
-        path: '/hmm-tools',
-        icon: 'fas fa-tools'
-    },
-    {
-        title: 'Conversion ADN',
-        path: '/conversion-adn',
-        icon: 'fas fa-dna'
-    },
-    {
-        title: 'Documentation',
-        path: '/documentation',
-        icon: 'fas fa-book'
-    }
-];
-
-export const Navbar: React.FC = () => {
-    const [isScrolled, setIsScrolled] = useState(false);
-    const location = useLocation();
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
+export function Navbar() {
+    const router = useRouter();
+    
+    const isActive = (path: string) => {
+        return router.pathname === path ? 'active' : '';
+    };
+    
     return (
-        <nav className={`navbar navbar-expand-lg fixed-top ${isScrolled ? 'navbar-scrolled' : ''}`}>
+        <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
             <div className="container">
-                <Link className="navbar-brand" to="/">
-                    <i className="fas fa-project-diagram me-2"></i>
+                <Link href="/" className="navbar-brand">
                     UMDHMM
                 </Link>
                 
@@ -56,30 +20,39 @@ export const Navbar: React.FC = () => {
                     className="navbar-toggler" 
                     type="button" 
                     data-bs-toggle="collapse" 
-                    data-bs-target="#navbarNav"
+                    data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" 
+                    aria-expanded="false" 
+                    aria-label="Toggle navigation"
                 >
                     <span className="navbar-toggler-icon"></span>
                 </button>
-
+                
                 <div className="collapse navbar-collapse" id="navbarNav">
                     <ul className="navbar-nav ms-auto">
-                        {navItems.map((item, index) => (
-                            <li className="nav-item" key={index}>
-                                <Link 
-                                    className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
-                                    to={item.path}
-                                >
-                                    <i className={`${item.icon} me-2`}></i>
-                                    {item.title}
-                                    {location.pathname === item.path && (
-                                        <div className="nav-indicator"></div>
-                                    )}
-                                </Link>
-                            </li>
-                        ))}
+                        <li className="nav-item">
+                            <Link href="/" className={`nav-link ${isActive('/')}`}>
+                                Accueil
+                            </Link>
+                        </li>
+                        <li className="nav-item">
+                            <Link href="/hmm-tools" className={`nav-link ${isActive('/hmm-tools')}`}>
+                                Outils HMM
+                            </Link>
+                        </li>
+                        <li className="nav-item">
+                            <Link href="/dna-conversion" className={`nav-link ${isActive('/dna-conversion')}`}>
+                                Conversion ADN
+                            </Link>
+                        </li>
+                        <li className="nav-item">
+                            <Link href="/documentation" className={`nav-link ${isActive('/documentation')}`}>
+                                Documentation
+                            </Link>
+                        </li>
                     </ul>
                 </div>
             </div>
         </nav>
     );
-}; 
+} 

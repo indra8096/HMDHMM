@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 interface CardProps {
-    children: React.ReactNode;
+    children: ReactNode;
     className?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ children, className = '' }) => {
+export function Card({ children, className = '' }: CardProps) {
     return (
         <div className={`card shadow-sm ${className}`}>
             <div className="card-body">
@@ -13,4 +13,4 @@ export const Card: React.FC<CardProps> = ({ children, className = '' }) => {
             </div>
         </div>
     );
-}; 
+} 
