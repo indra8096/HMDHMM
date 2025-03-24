@@ -2,7 +2,6 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/explication": "pages/explication.js",
-  "/api/generate-simulation": "pages/api/generate-simulation.js"
+  "/hmm-tools": "pages/hmm-tools.js",
+  "/documentation": "pages/documentation.js"
 }
