@@ -4,6 +4,5 @@
   "/_document": "pages/_document.js",
   "/documentation": "pages/documentation.js",
   "/dna-conversion": "pages/dna-conversion.js",
-  "/hmm-tools": "pages/hmm-tools.js",
-  "/": "pages/index.js"
+  "/explication": "pages/explication.js"
 }

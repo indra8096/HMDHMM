@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transitions du Robot Astronaute</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        canvas {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #ddd;
+            background-color: #fff;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .legend {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .planet {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        .color-box {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Modèle de transition du Robot Astronaute</h1>
+        <canvas id="transitionCanvas" width="600" height="400"></canvas>
+        
+        <div class="legend">
+            <div class="planet"><span class="color-box" style="background-color: #16a085;"></span> Terre</div>
+            <div class="planet"><span class="color-box" style="background-color: #8e44ad;"></span> Lune</div>
+            <div class="planet"><span class="color-box" style="background-color: #e74c3c;"></span> Mars</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('transitionCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Positions des planètes
+            const planets = {
+                earth: { x: 150, y: 200, color: '#16a085', name: 'Terre' },
+                moon: { x: 450, y: 100, color: '#8e44ad', name: 'Lune' },
+                mars: { x: 450, y: 300, color: '#e74c3c', name: 'Mars' }
+            };
+            
+            // Transitions
+            const transitions = [
+                { from: 'earth', to: 'moon', probability: 0.6, color: '#3498db' },
+                { from: 'earth', to: 'mars', probability: 0.4, color: '#3498db' },
+                { from: 'moon', to: 'moon', probability: 0.8, color: '#8e44ad' },
+                { from: 'moon', to: 'mars', probability: 0.2, color: '#8e44ad' },
+                { from: 'mars', to: 'mars', probability: 0.4, color: '#e74c3c' },
+                { from: 'mars', to: 'moon', probability: 0.6, color: '#e74c3c' }
+            ];
+            
+            // Dessiner les planètes
+            function drawPlanet(planet) {
+                ctx.beginPath();
+                ctx.arc(planet.x, planet.y, 30, 0, Math.PI * 2);
+                ctx.fillStyle = planet.color;
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.font = 'bold 16px Arial';
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(planet.name, planet.x, planet.y);
+            }
+            
+            // Dessiner les flèches de transition
+            function drawTransition(from, to, probability, color) {
+                const fromPlanet = planets[from];
+                const toPlanet = planets[to];
+                
+                ctx.beginPath();
+                
+                if (from === to) {
+                    // Self-loop
+                    const radius = 40;
+                    ctx.arc(fromPlanet.x, fromPlanet.y - 50, radius, 0, Math.PI * 2);
+                    
+                    // Flèche
+                    const arrowX = fromPlanet.x;
+                    const arrowY = fromPlanet.y - 20;
+                    
+                    ctx.moveTo(arrowX, arrowY);
+                    ctx.lineTo(arrowX - 5, arrowY - 10);
+                    ctx.lineTo(arrowX + 5, arrowY - 10);
+                    ctx.closePath();
+                } else {
+                    // Calcul du vecteur
+                    let dx = toPlanet.x - fromPlanet.x;
+                    let dy = toPlanet.y - fromPlanet.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    dx = dx / length;
+                    dy = dy / length;
+                    
+                    // Points de départ et d'arrivée
+                    const startX = fromPlanet.x + dx * 30;
+                    const startY = fromPlanet.y + dy * 30;
+                    const endX = toPlanet.x - dx * 30;
+                    const endY = toPlanet.y - dy * 30;
+                    
+                    // Ligne
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    
+                    // Flèche
+                    const arrowLength = 15;
+                    const arrowWidth = 8;
+                    
+                    const angle = Math.atan2(dy, dx);
+                    const arrowX1 = endX - arrowLength * Math.cos(angle) + arrowWidth * Math.sin(angle);
+                    const arrowY1 = endY - arrowLength * Math.sin(angle) - arrowWidth * Math.cos(angle);
+                    const arrowX2 = endX - arrowLength * Math.cos(angle) - arrowWidth * Math.sin(angle);
+                    const arrowY2 = endY - arrowLength * Math.sin(angle) + arrowWidth * Math.cos(angle);
+                    
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(arrowX1, arrowY1);
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(arrowX2, arrowY2);
+                }
+                
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2 + probability * 2; // Épaisseur basée sur la probabilité
+                ctx.stroke();
+                
+                // Afficher la probabilité
+                if (from === to) {
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(probability.toString(), fromPlanet.x, fromPlanet.y - 80);
+                } else {
+                    const textX = (fromPlanet.x + toPlanet.x) / 2;
+                    const textY = (fromPlanet.y + toPlanet.y) / 2 - 15;
+                    
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(probability.toString(), textX, textY);
+                }
+            }
+            
+            // Effacer le canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dessiner toutes les transitions
+            transitions.forEach(t => drawTransition(t.from, t.to, t.probability, t.color));
+            
+            // Dessiner toutes les planètes
+            Object.values(planets).forEach(drawPlanet);
+        });
+    </script>
+</body>
+</html> 

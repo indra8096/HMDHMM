@@ -1,0 +1,17 @@
+digraph RobotTransitions {
+  bgcolor="transparent";
+  node [shape=circle, style=filled, color="#3498db", fontcolor=white, fontname="Arial"];
+  
+  Terre [fillcolor="#16a085", pos="0,0!"];
+  Lune [fillcolor="#8e44ad", pos="3,1!"];
+  Mars [fillcolor="#e74c3c", pos="3,-1!"];
+  
+  Terre -> Lune [label="0.6", color="#3498db", penwidth=2.0];
+  Terre -> Mars [label="0.4", color="#3498db", penwidth=1.6];
+  
+  Lune -> Lune [label="0.8", color="#8e44ad", penwidth=2.4];
+  Lune -> Mars [label="0.2", color="#8e44ad", penwidth=1.2];
+  
+  Mars -> Mars [label="0.4", color="#e74c3c", penwidth=1.6];
+  Mars -> Lune [label="0.6", color="#e74c3c", penwidth=2.0];
+} 
