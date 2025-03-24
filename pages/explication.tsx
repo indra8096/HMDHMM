@@ -5,11 +5,78 @@ import { useEffect, useState } from 'react';
 
 export default function Explication() {
     const [isMounted, setIsMounted] = useState(false);
+    const [sequence, setSequence] = useState<Array<{day: number, state: string, stateCode: number}>>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [initialState, setInitialState] = useState(0);
+    const [sequenceLength, setSequenceLength] = useState(10);
     
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
+    // Calculer les statistiques de la séquence
+    const calculateStats = () => {
+        if (sequence.length === 0) return { terre: 0, lune: 0, mars: 0, total: 0 };
+        
+        const counts = {
+            'Terre': 0,
+            'Lune': 0,
+            'Mars': 0
+        };
+        
+        sequence.forEach(item => {
+            if (counts[item.state as keyof typeof counts] !== undefined) {
+                counts[item.state as keyof typeof counts]++;
+            }
+        });
+        
+        return {
+            terre: counts['Terre'],
+            lune: counts['Lune'],
+            mars: counts['Mars'],
+            total: sequence.length
+        };
+    };
+    
+    const stats = calculateStats();
+    
+    const generateSequence = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const response = await fetch('/api/markov/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    initialState,
+                    length: sequenceLength
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Erreur lors de la génération de la séquence');
+            }
+            
+            setSequence(data.sequence || []);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const stateColors = {
+        "Terre": "bg-success",
+        "Lune": "bg-info",
+        "Mars": "bg-danger"
+    };
+    
     return (
         <div>
             <Head>
@@ -58,6 +125,22 @@ export default function Explication() {
                     </div>
                 </div>
 
+                
+                
+                <div className="card mb-4">
+                    <div className="card-body text-center">
+                        {isMounted && (
+                            <iframe 
+                                src="/robot_transitions.html" 
+                                width="650" 
+                                height="450" 
+                                style={{border: 'none', maxWidth: '100%'}}
+                                title="Visualisation des transitions du robot"
+                            ></iframe>
+                        )}
+                    </div>
+                </div>
+
                 <div className="card mb-4">
                     <div className="card-body">
                         <h2 className='h4 mb-3'>La première propriété des chaines de Markov</h2>
@@ -76,20 +159,161 @@ export default function Explication() {
                         <p>C'est le coeur des chaines de Markov.</p>
                     </div>
                 </div>
-                
+
                 <div className="card mb-4">
-                    <div className="card-body text-center">
-                        {isMounted && (
-                            <iframe 
-                                src="/robot_transitions.html" 
-                                width="650" 
-                                height="450" 
-                                style={{border: 'none', maxWidth: '100%'}}
-                                title="Visualisation des transitions du robot"
-                            ></iframe>
+                    <div className="card-body">
+                        <h2 className='h4 mb-3'>La seconde propriété des chaines de Markov</h2>
+                        <p>La somme des poids des flèches sortantes de n'importe quel état est égale à 1.</p>
+                        <p>Pourquoi ? Parce qu'elles représentent des probabilités et pour que les probabilités aient un sens, elles doivent totaliser 1</p>
+                        <p>Pour ici, je vais vous dire qu'il existe certaines chaines de Markov avec des propriétés spéciales mais elles mériteront des explications à part entière.</p>
+                        <p>Réalisons un petit qui génère des séquences aléatoires</p>
+                    </div>
+                </div>
+
+                <div className="card mb-4">
+                    <div className="card-body">
+                        <h2 className='h4 mb-3'>
+                            <i className="fas fa-random me-2"></i>
+                            Générateur de séquences aléatoires
+                        </h2>
+                        <p>Observez comment notre modèle de Markov génère des séquences aléatoires en fonction des probabilités de transition.</p>
+                        
+                        <div className="row mb-3">
+                            <div className="col-md-6">
+                                <div className="form-group">
+                                    <label htmlFor="initialState" className="form-label">État initial:</label>
+                                    <select 
+                                        id="initialState"
+                                        className="form-select"
+                                        value={initialState}
+                                        onChange={(e) => setInitialState(parseInt(e.target.value))}
+                                    >
+                                        <option value={0}>Terre</option>
+                                        <option value={1}>Lune</option>
+                                        <option value={2}>Mars</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="col-md-6">
+                                <div className="form-group">
+                                    <label htmlFor="sequenceLength" className="form-label">Longueur de la séquence:</label>
+                                    <select 
+                                        id="sequenceLength"
+                                        className="form-select"
+                                        value={sequenceLength}
+                                        onChange={(e) => setSequenceLength(parseInt(e.target.value))}
+                                    >
+                                        {[...Array(10)].map((_, i) => (
+                                            <option key={i+1} value={i+1}>{i+1}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="d-grid gap-2 mb-4">
+                            <button 
+                                className="btn btn-primary" 
+                                onClick={generateSequence}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Génération en cours...
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fas fa-random me-2"></i>
+                                        Générer une séquence
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                        
+                        {error && (
+                            <div className="alert alert-danger">
+                                <i className="fas fa-exclamation-triangle me-2"></i>
+                                {error}
+                            </div>
+                        )}
+                        
+                        {sequence.length > 0 && (
+                            <div>
+                                <h5>Résultat de la simulation:</h5>
+                                <div className="d-flex flex-nowrap overflow-auto">
+                                    {sequence.map((item, index) => (
+                                        <div 
+                                            key={index} 
+                                            className={`card ${stateColors[item.state as keyof typeof stateColors]} text-white me-2`}
+                                            style={{ minWidth: '90px', maxWidth: '90px' }}
+                                        >
+                                            <div className="card-body p-2 text-center">
+                                                <h5 className="card-title mb-1">Jour {item.day}</h5>
+                                                <p className="card-text mb-0">{item.state}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
+
+                {sequence.length > 0 && (
+                    <div className="card mb-4">
+                        <div className="card-body">
+                            <h2 className='h4 mb-3'>
+                                <i className="fas fa-chart-pie me-2"></i>
+                                Statistiques de la séquence générée
+                            </h2>
+                            <p>Voici les probabilités observées dans la séquence générée :</p>
+                            
+                            <div className="row mb-3">
+                                <div className="col-md-4">
+                                    <div className={`card bg-success text-white mb-2`}>
+                                        <div className="card-body p-3">
+                                            <h5 className="card-title">Terre</h5>
+                                            <p className="card-text fs-4">{stats.terre} / {stats.total} = {(stats.terre / stats.total).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-4">
+                                    <div className={`card bg-info text-white mb-2`}>
+                                        <div className="card-body p-3">
+                                            <h5 className="card-title">Lune</h5>
+                                            <p className="card-text fs-4">{stats.lune} / {stats.total} = {(stats.lune / stats.total).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-4">
+                                    <div className={`card bg-danger text-white mb-2`}>
+                                        <div className="card-body p-3">
+                                            <h5 className="card-title">Mars</h5>
+                                            <p className="card-text fs-4">{stats.mars} / {stats.total} = {(stats.mars / stats.total).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <p>Comment les trouver ? C'est assez simple : il suffit de diviser le nombre d'occurrences d'un élément par le nombre total de jours.</p>
+                            <p>Il est évident que si nous changeons le nombre d'étapes alors ces probabilités varieront mais nous sommes intéressés par ce qui se passe à long terme.</p>
+                            <p>Ces probabilités convergent-elles vers des valeurs fixes ou continuent-elles à changer pour toujours ?</p>
+                            <p>Pour répondre à cette question, nous allons faire une simulation avec 1000 étapes.</p>
+                        </div>
+
+                        <div className="card mb-4">
+                    <div className="card-body">
+                        <p>Tout d'abord, on doit se placer dans un contexte. Imaginons que vous êtes astronaute.</p>
+                        <p>Vous avez un robot qui vous accompagne dans l'espace.</p>
+                        <p>Ce robot est très intelligent et peut effectuer des actions tout seul.</p>
+                        <p>Disons qu'il part de la planète initiale, la Terre.</p>
+                        <p>Il est capable de décider d'aller sur une autre planète.</p>
+                        <p>Il peut aller sur Mars, sur la Lune ou bien rester sur la Terre.</p>
+                    </div>
+                </div>
+                    </div>
+                )}
                 
                 <h2 className="h4 mb-3">
                     <i className="fas fa-eye-slash me-2"></i>

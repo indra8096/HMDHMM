@@ -2,7 +2,6 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/documentation": "pages/documentation.js",
-  "/dna-conversion": "pages/dna-conversion.js",
-  "/explication": "pages/explication.js"
+  "/explication": "pages/explication.js",
+  "/": "pages/index.js"
 }
