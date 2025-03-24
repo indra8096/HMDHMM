@@ -304,13 +304,10 @@ export default function Explication() {
 
                         <div className="card mb-4">
                     <div className="card-body">
-                        <p>Tout d'abord, on doit se placer dans un contexte. Imaginons que vous êtes astronaute.</p>
-                        <p>Vous avez un robot qui vous accompagne dans l'espace.</p>
-                        <p>Ce robot est très intelligent et peut effectuer des actions tout seul.</p>
-                        <p>Disons qu'il part de la planète initiale, la Terre.</p>
-                        <p>Il est capable de décider d'aller sur une autre planète.</p>
-                        <p>Il peut aller sur Mars, sur la Lune ou bien rester sur la Terre.</p>
+                        ici il faut créer un script en C stocké dans /tools avec un aspect très visuel pour mes 1000 états ou plus et avec la possibilité de ralentir le processus pour prendre bien le temps de voir les choses
                     </div>
+
+                    
                 </div>
                     </div>
                 )}
