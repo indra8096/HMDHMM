@@ -1,9 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/documentation": "pages/documentation.js",
-  "/": "pages/index.js",
-  "/hmm-tools": "pages/hmm-tools.js",
-  "/dna-conversion": "pages/dna-conversion.js"
-}
+{}
