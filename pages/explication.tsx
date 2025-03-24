@@ -8,8 +8,15 @@ export default function Explication() {
     const [sequence, setSequence] = useState<Array<{day: number, state: string, stateCode: number}>>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [initialState, setInitialState] = useState(0);
+    const [initialState, setInitialState] = useState("0");
     const [sequenceLength, setSequenceLength] = useState(10);
+    const [transitionMatrix, setTransitionMatrix] = useState({
+        terreTerre: "0.0", terreLune: "0.6", terreMars: "0.4",
+        luneTerre: "0.0", luneLune: "0.8", luneMars: "0.2",
+        marsTerre: "0.0", marsLune: "0.6", marsMars: "0.4"
+    });
+    const [isSimulationReady, setIsSimulationReady] = useState(false);
+    const [simulationUrl, setSimulationUrl] = useState("");
     
     useEffect(() => {
         setIsMounted(true);
@@ -76,7 +83,44 @@ export default function Explication() {
         "Lune": "bg-info",
         "Mars": "bg-danger"
     };
-    
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        
+        // Construction de la chaîne de matrice de transition
+        const matrixString = `${transitionMatrix.terreTerre},${transitionMatrix.terreLune},${transitionMatrix.terreMars},` +
+                           `${transitionMatrix.luneTerre},${transitionMatrix.luneLune},${transitionMatrix.luneMars},` +
+                           `${transitionMatrix.marsTerre},${transitionMatrix.marsLune},${transitionMatrix.marsMars}`;
+        
+        try {
+            const response = await fetch(`/api/generate-simulation?initialState=${initialState}&matrix=${matrixString}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSimulationUrl(data.url);
+                setIsSimulationReady(true);
+            } else {
+                alert("Erreur lors de la génération de la simulation");
+            }
+        } catch (error) {
+            console.error("Erreur:", error);
+            alert("Erreur lors de la génération de la simulation");
+        }
+    };
+
+    // Fonction pour mettre à jour une valeur de la matrice de transition
+    const updateTransitionValue = (key: string, value: string) => {
+        // Valider que la valeur est un nombre entre 0 et 1
+        const numValue = parseFloat(value);
+        if (isNaN(numValue) || numValue < 0 || numValue > 1) {
+            return; // Ne pas mettre à jour si la valeur n'est pas valide
+        }
+        
+        setTransitionMatrix({
+            ...transitionMatrix,
+            [key]: value
+        });
+    };
+
     return (
         <div>
             <Head>
@@ -186,11 +230,11 @@ export default function Explication() {
                                         id="initialState"
                                         className="form-select"
                                         value={initialState}
-                                        onChange={(e) => setInitialState(parseInt(e.target.value))}
+                                        onChange={(e) => setInitialState(e.target.value)}
                                     >
-                                        <option value={0}>Terre</option>
-                                        <option value={1}>Lune</option>
-                                        <option value={2}>Mars</option>
+                                        <option value="0">Terre</option>
+                                        <option value="1">Lune</option>
+                                        <option value="2">Mars</option>
                                     </select>
                                 </div>
                             </div>
@@ -303,12 +347,43 @@ export default function Explication() {
                         </div>
 
                         <div className="card mb-4">
-                    <div className="card-body">
-                        ici il faut créer un script en C stocké dans /tools avec un aspect très visuel pour mes 1000 états ou plus et avec la possibilité de ralentir le processus pour prendre bien le temps de voir les choses
-                    </div>
-
-                    
-                </div>
+                            <div className="card-body">
+                                <h2 className='h4 mb-3'>
+                                    <i className="fas fa-chart-line me-2"></i>
+                                    Simulation sur 1000 étapes
+                                </h2>
+                                <p>Cette simulation interactive vous permet d'observer l'évolution des probabilités sur une longue période (1000 étapes).</p>
+                                <p>Vous pouvez contrôler la vitesse de la simulation et naviguer à n'importe quelle étape pour observer les résultats.</p>
+                                
+                                {isMounted && (
+                                    <div className="text-center mt-4">
+                                        <iframe 
+                                            src="/markov_simulation_1000.html" 
+                                            width="100%" 
+                                            height="800" 
+                                            style={{border: 'none', maxWidth: '100%'}}
+                                            title="Simulation d'une chaîne de Markov sur 1000 étapes"
+                                        ></iframe>
+                                    </div>
+                                )}
+                                
+                                <div className="mt-4">
+                                    <h5>Observations importantes :</h5>
+                                    <ul>
+                                        <li>Notez comment les probabilités convergent vers des valeurs stables avec le temps</li>
+                                        <li>Cette <strong>distribution stationnaire</strong> est une propriété fondamentale des chaînes de Markov</li>
+                                        <li>Peu importe l'état initial, les probabilités convergent vers les mêmes valeurs</li>
+                                        <li>Pour notre modèle, les valeurs théoriques de la distribution stationnaire sont :
+                                            <ul>
+                                                <li>Terre : 0%</li>
+                                                <li>Lune : 75%</li>
+                                                <li>Mars : 25%</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
                 
@@ -337,6 +412,189 @@ export default function Explication() {
                             <li>La reconnaissance de gestes</li>
                             <li>L'analyse de séries temporelles</li>
                         </ul>
+                    </div>
+                </div>
+
+                <div className="card mb-4">
+                    <div className="card-body">
+                        <h2 className="card-title"><i className="fas fa-sliders me-2"></i>Personnaliser votre simulation</h2>
+                        <p>
+                            Vous pouvez définir votre propre modèle de transition et état initial pour la simulation.
+                            Assurez-vous que la somme des probabilités pour chaque état de départ est égale à 1.
+                        </p>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="mb-3">
+                                <label className="form-label">État initial</label>
+                                <select 
+                                    className="form-select" 
+                                    value={initialState} 
+                                    onChange={(e) => setInitialState(e.target.value)}
+                                >
+                                    <option value="0">Terre</option>
+                                    <option value="1">Lune</option>
+                                    <option value="2">Mars</option>
+                                </select>
+                            </div>
+                            
+                            <div className="card mb-3">
+                                <div className="card-header bg-success text-white">
+                                    <h5 className="mb-0">Depuis Terre</h5>
+                                </div>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <label className="form-label">Terre → Terre</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.terreTerre} 
+                                                onChange={(e) => updateTransitionValue('terreTerre', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label">Terre → Lune</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.terreLune} 
+                                                onChange={(e) => updateTransitionValue('terreLune', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label">Terre → Mars</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.terreMars} 
+                                                onChange={(e) => updateTransitionValue('terreMars', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="card mb-3">
+                                <div className="card-header bg-info text-white">
+                                    <h5 className="mb-0">Depuis Lune</h5>
+                                </div>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <label className="form-label">Lune → Terre</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.luneTerre} 
+                                                onChange={(e) => updateTransitionValue('luneTerre', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label">Lune → Lune</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.luneLune} 
+                                                onChange={(e) => updateTransitionValue('luneLune', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label">Lune → Mars</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.luneMars} 
+                                                onChange={(e) => updateTransitionValue('luneMars', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="card mb-3">
+                                <div className="card-header bg-danger text-white">
+                                    <h5 className="mb-0">Depuis Mars</h5>
+                                </div>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className="col-md-4">
+                                            <label className="form-label">Mars → Terre</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.marsTerre} 
+                                                onChange={(e) => updateTransitionValue('marsTerre', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label">Mars → Lune</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.marsLune} 
+                                                onChange={(e) => updateTransitionValue('marsLune', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label className="form-label">Mars → Mars</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="1" 
+                                                step="0.1"
+                                                className="form-control" 
+                                                value={transitionMatrix.marsMars} 
+                                                onChange={(e) => updateTransitionValue('marsMars', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" className="btn btn-primary">
+                                Générer la simulation
+                            </button>
+                        </form>
+                        
+                        {isSimulationReady && (
+                            <div className="mt-4">
+                                <div className="alert alert-success">
+                                    Simulation générée ! Cliquez sur le bouton ci-dessous pour la visualiser.
+                                </div>
+                                <a 
+                                    href={simulationUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="btn btn-success"
+                                >
+                                    Voir la simulation
+                                </a>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>

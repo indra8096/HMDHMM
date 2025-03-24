@@ -1,0 +1,3382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation d'une chaîne de Markov sur 1000 étapes</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .state-indicator {
+            width: 2px;
+            height: 20px;
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .slider-container label {
+            margin-right: 10px;
+            width: 150px;
+        }
+        .slider-value {
+            margin-left: 10px;
+            width: 50px;
+        }
+        .state-sequence {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin: 10px 0;
+            height: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        .terminal {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .terminal-line {
+            margin: 0;
+            line-height: 1.2;
+        }
+        .terminal-prompt {
+            color: #0088ff;
+        }
+        .terra {
+            color: #28a745;
+        }
+        .lune {
+            color: #17a2b8;
+        }
+        .mars {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Simulation d'une chaîne de Markov sur 1000 étapes</h1>
+        <p><strong>État initial :</strong> Terre</p>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Contrôles de la simulation</h5>
+                <div class="controls">
+                    <div class="slider-container">
+                        <label for="speedSlider">Vitesse de simulation :</label>
+                        <input type="range" id="speedSlider" min="1" max="100" value="50" class="form-range">
+                        <span class="slider-value" id="speedValue">50</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="stepSlider">Étape actuelle :</label>
+                        <input type="range" id="stepSlider" min="1" max="1000" value="1" class="form-range">
+                        <span class="slider-value" id="stepValue">1</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="playButton" class="btn btn-primary">Lecture</button>
+                        <button id="pauseButton" class="btn btn-secondary">Pause</button>
+                        <button id="resetButton" class="btn btn-danger">Réinitialiser</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Terminal en temps réel</h5>
+                <div class="terminal" id="terminal">
+                    <p class="terminal-line"><span class="terminal-prompt">robot@cosmos:~$</span> ./simulate_markov.sh Terre 1000</p>
+                    <p class="terminal-line">Initialisation de la simulation avec état initial: <span class="terra">Terre</span></p>
+                    <p class="terminal-line">Début de la simulation...</p>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Séquence d'états</h5>
+                <div class="state-sequence" id="stateSequence">
+                    <div class="state-indicator" id="state-0" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-1" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-2" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-3" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-4" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-5" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-6" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-7" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-8" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-9" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-10" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-11" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-12" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-13" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-14" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-15" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-16" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-17" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-18" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-19" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-20" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-21" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-22" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-23" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-24" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-25" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-26" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-27" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-28" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-29" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-30" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-31" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-32" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-33" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-34" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-35" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-36" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-37" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-38" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-39" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-40" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-41" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-42" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-43" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-44" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-45" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-46" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-47" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-48" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-49" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-50" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-51" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-52" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-53" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-54" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-55" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-56" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-57" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-58" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-59" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-60" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-61" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-62" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-63" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-64" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-65" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-66" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-67" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-68" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-69" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-70" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-71" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-72" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-73" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-74" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-75" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-76" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-77" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-78" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-79" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-80" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-81" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-82" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-83" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-84" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-85" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-86" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-87" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-88" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-89" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-90" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-91" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-92" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-93" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-94" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-95" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-96" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-97" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-98" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-99" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-100" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-101" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-102" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-103" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-104" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-105" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-106" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-107" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-108" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-109" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-110" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-111" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-112" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-113" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-114" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-115" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-116" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-117" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-118" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-119" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-120" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-121" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-122" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-123" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-124" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-125" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-126" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-127" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-128" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-129" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-130" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-131" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-132" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-133" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-134" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-135" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-136" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-137" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-138" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-139" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-140" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-141" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-142" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-143" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-144" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-145" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-146" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-147" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-148" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-149" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-150" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-151" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-152" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-153" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-154" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-155" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-156" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-157" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-158" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-159" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-160" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-161" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-162" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-163" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-164" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-165" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-166" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-167" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-168" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-169" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-170" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-171" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-172" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-173" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-174" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-175" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-176" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-177" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-178" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-179" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-180" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-181" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-182" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-183" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-184" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-185" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-186" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-187" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-188" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-189" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-190" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-191" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-192" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-193" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-194" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-195" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-196" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-197" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-198" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-199" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-200" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-201" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-202" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-203" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-204" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-205" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-206" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-207" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-208" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-209" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-210" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-211" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-212" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-213" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-214" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-215" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-216" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-217" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-218" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-219" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-220" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-221" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-222" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-223" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-224" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-225" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-226" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-227" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-228" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-229" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-230" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-231" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-232" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-233" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-234" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-235" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-236" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-237" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-238" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-239" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-240" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-241" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-242" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-243" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-244" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-245" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-246" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-247" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-248" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-249" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-250" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-251" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-252" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-253" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-254" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-255" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-256" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-257" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-258" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-259" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-260" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-261" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-262" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-263" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-264" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-265" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-266" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-267" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-268" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-269" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-270" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-271" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-272" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-273" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-274" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-275" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-276" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-277" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-278" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-279" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-280" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-281" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-282" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-283" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-284" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-285" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-286" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-287" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-288" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-289" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-290" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-291" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-292" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-293" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-294" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-295" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-296" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-297" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-298" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-299" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-300" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-301" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-302" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-303" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-304" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-305" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-306" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-307" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-308" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-309" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-310" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-311" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-312" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-313" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-314" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-315" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-316" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-317" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-318" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-319" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-320" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-321" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-322" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-323" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-324" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-325" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-326" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-327" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-328" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-329" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-330" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-331" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-332" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-333" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-334" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-335" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-336" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-337" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-338" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-339" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-340" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-341" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-342" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-343" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-344" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-345" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-346" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-347" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-348" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-349" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-350" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-351" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-352" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-353" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-354" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-355" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-356" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-357" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-358" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-359" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-360" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-361" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-362" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-363" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-364" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-365" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-366" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-367" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-368" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-369" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-370" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-371" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-372" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-373" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-374" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-375" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-376" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-377" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-378" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-379" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-380" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-381" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-382" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-383" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-384" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-385" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-386" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-387" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-388" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-389" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-390" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-391" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-392" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-393" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-394" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-395" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-396" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-397" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-398" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-399" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-400" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-401" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-402" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-403" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-404" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-405" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-406" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-407" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-408" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-409" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-410" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-411" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-412" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-413" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-414" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-415" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-416" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-417" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-418" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-419" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-420" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-421" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-422" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-423" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-424" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-425" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-426" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-427" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-428" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-429" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-430" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-431" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-432" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-433" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-434" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-435" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-436" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-437" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-438" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-439" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-440" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-441" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-442" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-443" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-444" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-445" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-446" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-447" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-448" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-449" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-450" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-451" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-452" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-453" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-454" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-455" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-456" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-457" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-458" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-459" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-460" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-461" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-462" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-463" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-464" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-465" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-466" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-467" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-468" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-469" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-470" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-471" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-472" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-473" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-474" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-475" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-476" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-477" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-478" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-479" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-480" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-481" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-482" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-483" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-484" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-485" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-486" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-487" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-488" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-489" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-490" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-491" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-492" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-493" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-494" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-495" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-496" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-497" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-498" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-499" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-500" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-501" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-502" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-503" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-504" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-505" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-506" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-507" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-508" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-509" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-510" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-511" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-512" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-513" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-514" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-515" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-516" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-517" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-518" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-519" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-520" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-521" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-522" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-523" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-524" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-525" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-526" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-527" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-528" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-529" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-530" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-531" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-532" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-533" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-534" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-535" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-536" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-537" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-538" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-539" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-540" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-541" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-542" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-543" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-544" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-545" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-546" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-547" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-548" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-549" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-550" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-551" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-552" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-553" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-554" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-555" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-556" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-557" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-558" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-559" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-560" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-561" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-562" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-563" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-564" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-565" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-566" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-567" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-568" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-569" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-570" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-571" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-572" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-573" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-574" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-575" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-576" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-577" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-578" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-579" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-580" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-581" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-582" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-583" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-584" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-585" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-586" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-587" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-588" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-589" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-590" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-591" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-592" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-593" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-594" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-595" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-596" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-597" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-598" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-599" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-600" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-601" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-602" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-603" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-604" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-605" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-606" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-607" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-608" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-609" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-610" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-611" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-612" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-613" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-614" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-615" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-616" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-617" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-618" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-619" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-620" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-621" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-622" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-623" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-624" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-625" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-626" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-627" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-628" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-629" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-630" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-631" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-632" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-633" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-634" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-635" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-636" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-637" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-638" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-639" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-640" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-641" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-642" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-643" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-644" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-645" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-646" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-647" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-648" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-649" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-650" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-651" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-652" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-653" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-654" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-655" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-656" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-657" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-658" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-659" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-660" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-661" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-662" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-663" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-664" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-665" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-666" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-667" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-668" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-669" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-670" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-671" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-672" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-673" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-674" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-675" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-676" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-677" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-678" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-679" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-680" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-681" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-682" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-683" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-684" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-685" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-686" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-687" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-688" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-689" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-690" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-691" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-692" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-693" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-694" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-695" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-696" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-697" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-698" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-699" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-700" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-701" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-702" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-703" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-704" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-705" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-706" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-707" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-708" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-709" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-710" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-711" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-712" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-713" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-714" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-715" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-716" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-717" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-718" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-719" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-720" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-721" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-722" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-723" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-724" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-725" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-726" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-727" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-728" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-729" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-730" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-731" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-732" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-733" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-734" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-735" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-736" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-737" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-738" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-739" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-740" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-741" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-742" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-743" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-744" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-745" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-746" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-747" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-748" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-749" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-750" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-751" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-752" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-753" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-754" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-755" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-756" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-757" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-758" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-759" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-760" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-761" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-762" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-763" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-764" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-765" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-766" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-767" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-768" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-769" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-770" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-771" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-772" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-773" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-774" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-775" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-776" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-777" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-778" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-779" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-780" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-781" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-782" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-783" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-784" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-785" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-786" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-787" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-788" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-789" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-790" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-791" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-792" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-793" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-794" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-795" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-796" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-797" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-798" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-799" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-800" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-801" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-802" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-803" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-804" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-805" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-806" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-807" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-808" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-809" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-810" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-811" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-812" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-813" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-814" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-815" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-816" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-817" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-818" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-819" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-820" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-821" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-822" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-823" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-824" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-825" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-826" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-827" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-828" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-829" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-830" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-831" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-832" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-833" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-834" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-835" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-836" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-837" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-838" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-839" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-840" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-841" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-842" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-843" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-844" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-845" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-846" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-847" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-848" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-849" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-850" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-851" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-852" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-853" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-854" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-855" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-856" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-857" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-858" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-859" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-860" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-861" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-862" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-863" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-864" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-865" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-866" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-867" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-868" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-869" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-870" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-871" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-872" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-873" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-874" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-875" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-876" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-877" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-878" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-879" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-880" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-881" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-882" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-883" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-884" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-885" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-886" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-887" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-888" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-889" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-890" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-891" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-892" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-893" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-894" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-895" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-896" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-897" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-898" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-899" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-900" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-901" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-902" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-903" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-904" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-905" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-906" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-907" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-908" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-909" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-910" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-911" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-912" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-913" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-914" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-915" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-916" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-917" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-918" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-919" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-920" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-921" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-922" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-923" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-924" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-925" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-926" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-927" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-928" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-929" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-930" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-931" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-932" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-933" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-934" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-935" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-936" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-937" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-938" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-939" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-940" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-941" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-942" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-943" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-944" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-945" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-946" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-947" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-948" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-949" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-950" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-951" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-952" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-953" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-954" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-955" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-956" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-957" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-958" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-959" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-960" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-961" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-962" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-963" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-964" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-965" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-966" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-967" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-968" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-969" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-970" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-971" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-972" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-973" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-974" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-975" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-976" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-977" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-978" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-979" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-980" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-981" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-982" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-983" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-984" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-985" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-986" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-987" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-988" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-989" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-990" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-991" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-992" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-993" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-994" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-995" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-996" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-997" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-998" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-999" style="background-color: #dc3545;"></div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-success me-2">Terre</span>
+                    <span class="badge bg-info me-2">Lune</span>
+                    <span class="badge bg-danger me-2">Mars</span>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Évolution des probabilités</h5>
+                <div class="chart-container">
+                    <canvas id="statsChart"></canvas>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Terre</h5>
+                                <p class="card-text fs-4" id="terreStat">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Lune</h5>
+                                <p class="card-text fs-4" id="luneStat">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Mars</h5>
+                                <p class="card-text fs-4" id="marsStat">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            // Données de la séquence
+            const sequence = [
+                0,
+                2,
+                1,
+                0,
+                1,
+                1,
+                1,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                2,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                0,
+                0,
+                0,
+                2,
+                2,
+                0,
+                1,
+                1,
+                2,
+                0,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                2,
+                2,
+                1,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                0,
+                0,
+                0,
+                2,
+                0,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                2,
+                2,
+                2,
+                2,
+                0,
+                0,
+                2,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                0,
+                2,
+                0,
+                1,
+                1,
+                0,
+                0,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                2,
+                1,
+                0,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0,
+                2,
+                0,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                0,
+                1,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                2,
+                2,
+                2,
+                0,
+                1,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                1,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                1,
+                2,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                0,
+                0,
+                1,
+                1,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                2,
+                2,
+                2,
+                2,
+                1,
+                2,
+                0,
+                1,
+                1,
+                2,
+                2,
+                0,
+                1,
+                2,
+                0,
+                2,
+                2,
+                1,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                1,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                2,
+                0,
+                2,
+                2,
+                0,
+                1,
+                0,
+                0,
+                2,
+                2,
+                1,
+                0,
+                0,
+                1,
+                2,
+                2,
+                0,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                2,
+                2,
+                2,
+                2,
+                2,
+                0,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                0,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                0,
+                0,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                1,
+                0,
+                1,
+                0,
+                0,
+                2,
+                1,
+                0,
+                1,
+                0,
+                1,
+                2,
+                2,
+                0,
+                2,
+                2,
+                2,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                0,
+                2,
+                0,
+                1,
+                0,
+                0,
+                0,
+                2,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                2,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                0,
+                0,
+                0,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                2,
+                2,
+                2,
+                0,
+                0,
+                0,
+                1,
+                1,
+                1,
+                0,
+                0,
+                2,
+                1,
+                1,
+                0,
+                0,
+                0,
+                1,
+                2,
+                2,
+                1,
+                0,
+                0,
+                0,
+                2,
+                2,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                0,
+                2,
+                0,
+                1,
+                0,
+                0,
+                2,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                2,
+                0,
+                2,
+                2,
+                2,
+                1,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                2,
+                1,
+                0,
+                2,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                0,
+                2,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                0,
+                1,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                2,
+                1,
+                1,
+                0,
+                1,
+                2,
+                2,
+                2,
+                2,
+                0,
+                1,
+                0,
+                1,
+                0,
+                2,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                2,
+                2,
+                1,
+                2,
+                1,
+                0,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                2,
+                1,
+                0,
+                2,
+                0,
+                1,
+                0,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                0,
+                1,
+                0,
+                2,
+                2,
+                1,
+                1,
+                1,
+                0,
+                2,
+                2,
+                2
+            ];
+
+            // Données des statistiques cumulatives
+            const cumulativeStats = [
+                [1.000000, 0.000000, 0.000000],
+                [0.500000, 0.000000, 0.500000],
+                [0.333333, 0.333333, 0.333333],
+                [0.500000, 0.250000, 0.250000],
+                [0.400000, 0.400000, 0.200000],
+                [0.333333, 0.500000, 0.166667],
+                [0.285714, 0.571429, 0.142857],
+                [0.250000, 0.500000, 0.250000],
+                [0.222222, 0.555556, 0.222222],
+                [0.300000, 0.500000, 0.200000],
+                [0.272727, 0.454545, 0.272727],
+                [0.250000, 0.416667, 0.333333],
+                [0.230769, 0.384615, 0.384615],
+                [0.214286, 0.357143, 0.428571],
+                [0.200000, 0.333333, 0.466667],
+                [0.187500, 0.375000, 0.437500],
+                [0.235294, 0.352941, 0.411765],
+                [0.222222, 0.333333, 0.444444],
+                [0.210526, 0.315789, 0.473684],
+                [0.200000, 0.300000, 0.500000],
+                [0.190476, 0.333333, 0.476190],
+                [0.181818, 0.318182, 0.500000],
+                [0.173913, 0.347826, 0.478261],
+                [0.208333, 0.333333, 0.458333],
+                [0.240000, 0.320000, 0.440000],
+                [0.269231, 0.307692, 0.423077],
+                [0.296296, 0.296296, 0.407407],
+                [0.321429, 0.285714, 0.392857],
+                [0.310345, 0.310345, 0.379310],
+                [0.333333, 0.300000, 0.366667],
+                [0.322581, 0.290323, 0.387097],
+                [0.312500, 0.281250, 0.406250],
+                [0.303030, 0.272727, 0.424242],
+                [0.323529, 0.264706, 0.411765],
+                [0.342857, 0.257143, 0.400000],
+                [0.361111, 0.250000, 0.388889],
+                [0.351351, 0.243243, 0.405405],
+                [0.342105, 0.236842, 0.421053],
+                [0.358974, 0.230769, 0.410256],
+                [0.350000, 0.250000, 0.400000],
+                [0.341463, 0.268293, 0.390244],
+                [0.333333, 0.261905, 0.404762],
+                [0.348837, 0.255814, 0.395349],
+                [0.340909, 0.250000, 0.409091],
+                [0.333333, 0.266667, 0.400000],
+                [0.326087, 0.282609, 0.391304],
+                [0.340426, 0.276596, 0.382979],
+                [0.333333, 0.270833, 0.395833],
+                [0.326531, 0.265306, 0.408163],
+                [0.320000, 0.260000, 0.420000],
+                [0.313725, 0.254902, 0.431373],
+                [0.307692, 0.250000, 0.442308],
+                [0.301887, 0.245283, 0.452830],
+                [0.296296, 0.259259, 0.444444],
+                [0.290909, 0.254545, 0.454545],
+                [0.285714, 0.250000, 0.464286],
+                [0.280702, 0.263158, 0.456140],
+                [0.275862, 0.258621, 0.465517],
+                [0.271186, 0.254237, 0.474576],
+                [0.266667, 0.250000, 0.483333],
+                [0.262295, 0.262295, 0.475410],
+                [0.258065, 0.274194, 0.467742],
+                [0.269841, 0.269841, 0.460317],
+                [0.265625, 0.265625, 0.468750],
+                [0.261538, 0.261538, 0.476923],
+                [0.257576, 0.257576, 0.484848],
+                [0.253731, 0.268657, 0.477612],
+                [0.264706, 0.264706, 0.470588],
+                [0.275362, 0.260870, 0.463768],
+                [0.285714, 0.257143, 0.457143],
+                [0.281690, 0.253521, 0.464789],
+                [0.291667, 0.250000, 0.458333],
+                [0.301370, 0.246575, 0.452055],
+                [0.297297, 0.243243, 0.459459],
+                [0.293333, 0.240000, 0.466667],
+                [0.289474, 0.236842, 0.473684],
+                [0.285714, 0.233766, 0.480519],
+                [0.282051, 0.230769, 0.487179],
+                [0.278481, 0.240506, 0.481013],
+                [0.275000, 0.237500, 0.487500],
+                [0.271605, 0.234568, 0.493827],
+                [0.268293, 0.231707, 0.500000],
+                [0.265060, 0.228916, 0.506024],
+                [0.273810, 0.226190, 0.500000],
+                [0.282353, 0.223529, 0.494118],
+                [0.279070, 0.220930, 0.500000],
+                [0.275862, 0.218391, 0.505747],
+                [0.272727, 0.227273, 0.500000],
+                [0.269663, 0.235955, 0.494382],
+                [0.277778, 0.233333, 0.488889],
+                [0.274725, 0.230769, 0.494505],
+                [0.271739, 0.228261, 0.500000],
+                [0.279570, 0.225806, 0.494624],
+                [0.276596, 0.234043, 0.489362],
+                [0.273684, 0.242105, 0.484211],
+                [0.270833, 0.250000, 0.479167],
+                [0.268041, 0.257732, 0.474227],
+                [0.265306, 0.265306, 0.469388],
+                [0.272727, 0.262626, 0.464646],
+                [0.270000, 0.260000, 0.470000],
+                [0.277228, 0.257426, 0.465347],
+                [0.274510, 0.254902, 0.470588],
+                [0.271845, 0.252427, 0.475728],
+                [0.269231, 0.259615, 0.471154],
+                [0.266667, 0.266667, 0.466667],
+                [0.264151, 0.273585, 0.462264],
+                [0.261682, 0.280374, 0.457944],
+                [0.268519, 0.277778, 0.453704],
+                [0.266055, 0.275229, 0.458716],
+                [0.263636, 0.272727, 0.463636],
+                [0.261261, 0.270270, 0.468468],
+                [0.258929, 0.276786, 0.464286],
+                [0.256637, 0.283186, 0.460177],
+                [0.254386, 0.289474, 0.456140],
+                [0.260870, 0.286957, 0.452174],
+                [0.258621, 0.284483, 0.456897],
+                [0.256410, 0.290598, 0.452991],
+                [0.262712, 0.288136, 0.449153],
+                [0.268908, 0.285714, 0.445378],
+                [0.266667, 0.283333, 0.450000],
+                [0.264463, 0.280992, 0.454545],
+                [0.262295, 0.278689, 0.459016],
+                [0.260163, 0.276423, 0.463415],
+                [0.258065, 0.274194, 0.467742],
+                [0.256000, 0.280000, 0.464000],
+                [0.261905, 0.277778, 0.460317],
+                [0.267717, 0.275591, 0.456693],
+                [0.265625, 0.273438, 0.460938],
+                [0.271318, 0.271318, 0.457364],
+                [0.269231, 0.276923, 0.453846],
+                [0.267176, 0.282443, 0.450382],
+                [0.272727, 0.280303, 0.446970],
+                [0.278195, 0.278195, 0.443609],
+                [0.276119, 0.276119, 0.447761],
+                [0.274074, 0.281481, 0.444444],
+                [0.272059, 0.286765, 0.441176],
+                [0.277372, 0.284672, 0.437956],
+                [0.275362, 0.282609, 0.442029],
+                [0.273381, 0.280576, 0.446043],
+                [0.271429, 0.285714, 0.442857],
+                [0.276596, 0.283688, 0.439716],
+                [0.274648, 0.288732, 0.436620],
+                [0.279720, 0.286713, 0.433566],
+                [0.277778, 0.291667, 0.430556],
+                [0.282759, 0.289655, 0.427586],
+                [0.280822, 0.287671, 0.431507],
+                [0.278912, 0.292517, 0.428571],
+                [0.283784, 0.290541, 0.425676],
+                [0.281879, 0.288591, 0.429530],
+                [0.280000, 0.293333, 0.426667],
+                [0.284768, 0.291391, 0.423841],
+                [0.282895, 0.296053, 0.421053],
+                [0.287582, 0.294118, 0.418301],
+                [0.285714, 0.292208, 0.422078],
+                [0.283871, 0.290323, 0.425806],
+                [0.282051, 0.288462, 0.429487],
+                [0.280255, 0.286624, 0.433121],
+                [0.278481, 0.291139, 0.430380],
+                [0.283019, 0.289308, 0.427673],
+                [0.287500, 0.287500, 0.425000],
+                [0.285714, 0.291925, 0.422360],
+                [0.290123, 0.290123, 0.419753],
+                [0.294479, 0.288344, 0.417178],
+                [0.292683, 0.292683, 0.414634],
+                [0.290909, 0.296970, 0.412121],
+                [0.295181, 0.295181, 0.409639],
+                [0.293413, 0.293413, 0.413174],
+                [0.297619, 0.291667, 0.410714],
+                [0.295858, 0.289941, 0.414201],
+                [0.294118, 0.288235, 0.417647],
+                [0.292398, 0.292398, 0.415205],
+                [0.296512, 0.290698, 0.412791],
+                [0.294798, 0.289017, 0.416185],
+                [0.293103, 0.287356, 0.419540],
+                [0.291429, 0.285714, 0.422857],
+                [0.295455, 0.284091, 0.420455],
+                [0.293785, 0.288136, 0.418079],
+                [0.292135, 0.286517, 0.421348],
+                [0.290503, 0.284916, 0.424581],
+                [0.288889, 0.288889, 0.422222],
+                [0.292818, 0.287293, 0.419890],
+                [0.291209, 0.285714, 0.423077],
+                [0.289617, 0.284153, 0.426230],
+                [0.288043, 0.282609, 0.429348],
+                [0.286486, 0.286486, 0.427027],
+                [0.284946, 0.290323, 0.424731],
+                [0.288770, 0.288770, 0.422460],
+                [0.287234, 0.292553, 0.420213],
+                [0.285714, 0.296296, 0.417989],
+                [0.289474, 0.294737, 0.415789],
+                [0.287958, 0.298429, 0.413613],
+                [0.291667, 0.296875, 0.411458],
+                [0.290155, 0.300518, 0.409326],
+                [0.293814, 0.298969, 0.407216],
+                [0.292308, 0.302564, 0.405128],
+                [0.290816, 0.301020, 0.408163],
+                [0.289340, 0.299492, 0.411168],
+                [0.287879, 0.297980, 0.414141],
+                [0.291457, 0.296482, 0.412060],
+                [0.290000, 0.300000, 0.410000],
+                [0.288557, 0.298507, 0.412935],
+                [0.287129, 0.301980, 0.410891],
+                [0.290640, 0.300493, 0.408867],
+                [0.289216, 0.299020, 0.411765],
+                [0.287805, 0.297561, 0.414634],
+                [0.286408, 0.296117, 0.417476],
+                [0.285024, 0.294686, 0.420290],
+                [0.283654, 0.298077, 0.418269],
+                [0.282297, 0.301435, 0.416268],
+                [0.285714, 0.300000, 0.414286],
+                [0.284360, 0.298578, 0.417062],
+                [0.283019, 0.297170, 0.419811],
+                [0.281690, 0.295775, 0.422535],
+                [0.280374, 0.294393, 0.425234],
+                [0.279070, 0.293023, 0.427907],
+                [0.277778, 0.296296, 0.425926],
+                [0.281106, 0.294931, 0.423963],
+                [0.279817, 0.298165, 0.422018],
+                [0.278539, 0.301370, 0.420091],
+                [0.281818, 0.300000, 0.418182],
+                [0.280543, 0.298643, 0.420814],
+                [0.279279, 0.297297, 0.423423],
+                [0.278027, 0.300448, 0.421525],
+                [0.281250, 0.299107, 0.419643],
+                [0.280000, 0.302222, 0.417778],
+                [0.278761, 0.305310, 0.415929],
+                [0.281938, 0.303965, 0.414097],
+                [0.280702, 0.302632, 0.416667],
+                [0.279476, 0.305677, 0.414847],
+                [0.282609, 0.304348, 0.413043],
+                [0.281385, 0.307359, 0.411255],
+                [0.284483, 0.306034, 0.409483],
+                [0.283262, 0.309013, 0.407725],
+                [0.282051, 0.311966, 0.405983],
+                [0.285106, 0.310638, 0.404255],
+                [0.283898, 0.313559, 0.402542],
+                [0.286920, 0.312236, 0.400844],
+                [0.289916, 0.310924, 0.399160],
+                [0.288703, 0.309623, 0.401674],
+                [0.291667, 0.308333, 0.400000],
+                [0.290456, 0.311203, 0.398340],
+                [0.293388, 0.309917, 0.396694],
+                [0.296296, 0.308642, 0.395062],
+                [0.295082, 0.311475, 0.393443],
+                [0.293878, 0.314286, 0.391837],
+                [0.292683, 0.317073, 0.390244],
+                [0.291498, 0.319838, 0.388664],
+                [0.294355, 0.318548, 0.387097],
+                [0.297189, 0.317269, 0.385542],
+                [0.296000, 0.320000, 0.384000],
+                [0.298805, 0.318725, 0.382470],
+                [0.301587, 0.317460, 0.380952],
+                [0.300395, 0.320158, 0.379447],
+                [0.303150, 0.318898, 0.377953],
+                [0.301961, 0.321569, 0.376471],
+                [0.304688, 0.320312, 0.375000],
+                [0.307393, 0.319066, 0.373541],
+                [0.306202, 0.321705, 0.372093],
+                [0.308880, 0.320463, 0.370656],
+                [0.307692, 0.323077, 0.369231],
+                [0.306513, 0.325670, 0.367816],
+                [0.305344, 0.328244, 0.366412],
+                [0.304183, 0.330798, 0.365019],
+                [0.306818, 0.329545, 0.363636],
+                [0.305660, 0.332075, 0.362264],
+                [0.304511, 0.334586, 0.360902],
+                [0.303371, 0.337079, 0.359551],
+                [0.302239, 0.339552, 0.358209],
+                [0.301115, 0.342007, 0.356877],
+                [0.303704, 0.340741, 0.355556],
+                [0.302583, 0.339483, 0.357934],
+                [0.305147, 0.338235, 0.356618],
+                [0.304029, 0.336996, 0.358974],
+                [0.302920, 0.335766, 0.361314],
+                [0.301818, 0.334545, 0.363636],
+                [0.300725, 0.333333, 0.365942],
+                [0.299639, 0.335740, 0.364621],
+                [0.302158, 0.334532, 0.363309],
+                [0.301075, 0.333333, 0.365591],
+                [0.300000, 0.332143, 0.367857],
+                [0.298932, 0.330961, 0.370107],
+                [0.297872, 0.329787, 0.372340],
+                [0.296820, 0.328622, 0.374558],
+                [0.295775, 0.327465, 0.376761],
+                [0.294737, 0.326316, 0.378947],
+                [0.293706, 0.325175, 0.381119],
+                [0.292683, 0.327526, 0.379791],
+                [0.295139, 0.326389, 0.378472],
+                [0.294118, 0.328720, 0.377163],
+                [0.293103, 0.331034, 0.375862],
+                [0.295533, 0.329897, 0.374570],
+                [0.294521, 0.332192, 0.373288],
+                [0.296928, 0.331058, 0.372014],
+                [0.295918, 0.329932, 0.374150],
+                [0.294915, 0.328814, 0.376271],
+                [0.293919, 0.327703, 0.378378],
+                [0.292929, 0.326599, 0.380471],
+                [0.291946, 0.325503, 0.382550],
+                [0.290970, 0.324415, 0.384615],
+                [0.290000, 0.326667, 0.383333],
+                [0.289037, 0.328904, 0.382060],
+                [0.291391, 0.327815, 0.380795],
+                [0.290429, 0.330033, 0.379538],
+                [0.289474, 0.332237, 0.378289],
+                [0.291803, 0.331148, 0.377049],
+                [0.290850, 0.330065, 0.379085],
+                [0.289902, 0.332248, 0.377850],
+                [0.292208, 0.331169, 0.376623],
+                [0.291262, 0.330097, 0.378641],
+                [0.290323, 0.329032, 0.380645],
+                [0.289389, 0.327974, 0.382637],
+                [0.288462, 0.330128, 0.381410],
+                [0.287540, 0.332268, 0.380192],
+                [0.289809, 0.331210, 0.378981],
+                [0.292063, 0.330159, 0.377778],
+                [0.291139, 0.332278, 0.376582],
+                [0.293375, 0.331230, 0.375394],
+                [0.292453, 0.333333, 0.374214],
+                [0.291536, 0.335423, 0.373041],
+                [0.290625, 0.337500, 0.371875],
+                [0.289720, 0.336449, 0.373832],
+                [0.288820, 0.335404, 0.375776],
+                [0.287926, 0.334365, 0.377709],
+                [0.287037, 0.336420, 0.376543],
+                [0.286154, 0.338462, 0.375385],
+                [0.285276, 0.340491, 0.374233],
+                [0.287462, 0.339450, 0.373089],
+                [0.286585, 0.341463, 0.371951],
+                [0.288754, 0.340426, 0.370821],
+                [0.287879, 0.339394, 0.372727],
+                [0.287009, 0.338369, 0.374622],
+                [0.286145, 0.337349, 0.376506],
+                [0.288288, 0.336336, 0.375375],
+                [0.287425, 0.335329, 0.377246],
+                [0.286567, 0.334328, 0.379104],
+                [0.285714, 0.336310, 0.377976],
+                [0.284866, 0.338279, 0.376855],
+                [0.284024, 0.340237, 0.375740],
+                [0.283186, 0.342183, 0.374631],
+                [0.285294, 0.341176, 0.373529],
+                [0.284457, 0.340176, 0.375367],
+                [0.283626, 0.339181, 0.377193],
+                [0.282799, 0.338192, 0.379009],
+                [0.281977, 0.340116, 0.377907],
+                [0.284058, 0.339130, 0.376812],
+                [0.283237, 0.338150, 0.378613],
+                [0.282421, 0.337176, 0.380403],
+                [0.281609, 0.339080, 0.379310],
+                [0.283668, 0.338109, 0.378223],
+                [0.282857, 0.340000, 0.377143],
+                [0.282051, 0.339031, 0.378917],
+                [0.281250, 0.340909, 0.377841],
+                [0.283286, 0.339943, 0.376771],
+                [0.282486, 0.338983, 0.378531],
+                [0.281690, 0.338028, 0.380282],
+                [0.280899, 0.339888, 0.379213],
+                [0.280112, 0.341737, 0.378151],
+                [0.279330, 0.343575, 0.377095],
+                [0.278552, 0.345404, 0.376045],
+                [0.277778, 0.347222, 0.375000],
+                [0.277008, 0.349030, 0.373961],
+                [0.279006, 0.348066, 0.372928],
+                [0.278237, 0.349862, 0.371901],
+                [0.277473, 0.351648, 0.370879],
+                [0.276712, 0.353425, 0.369863],
+                [0.278689, 0.352459, 0.368852],
+                [0.277929, 0.351499, 0.370572],
+                [0.277174, 0.350543, 0.372283],
+                [0.276423, 0.349593, 0.373984],
+                [0.275676, 0.348649, 0.375676],
+                [0.274933, 0.347709, 0.377358],
+                [0.274194, 0.346774, 0.379032],
+                [0.273458, 0.348525, 0.378016],
+                [0.272727, 0.350267, 0.377005],
+                [0.272000, 0.352000, 0.376000],
+                [0.273936, 0.351064, 0.375000],
+                [0.273210, 0.350133, 0.376658],
+                [0.272487, 0.349206, 0.378307],
+                [0.271768, 0.348285, 0.379947],
+                [0.271053, 0.347368, 0.381579],
+                [0.270341, 0.346457, 0.383202],
+                [0.269634, 0.345550, 0.384817],
+                [0.268930, 0.347258, 0.383812],
+                [0.270833, 0.346354, 0.382812],
+                [0.270130, 0.348052, 0.381818],
+                [0.269430, 0.349741, 0.380829],
+                [0.271318, 0.348837, 0.379845],
+                [0.270619, 0.347938, 0.381443],
+                [0.269923, 0.347044, 0.383033],
+                [0.269231, 0.346154, 0.384615],
+                [0.268542, 0.345269, 0.386189],
+                [0.270408, 0.344388, 0.385204],
+                [0.272265, 0.343511, 0.384224],
+                [0.271574, 0.345178, 0.383249],
+                [0.270886, 0.346835, 0.382278],
+                [0.270202, 0.345960, 0.383838],
+                [0.269521, 0.347607, 0.382872],
+                [0.271357, 0.346734, 0.381910],
+                [0.270677, 0.348371, 0.380952],
+                [0.272500, 0.347500, 0.380000],
+                [0.271820, 0.346633, 0.381546],
+                [0.271144, 0.348259, 0.380597],
+                [0.270471, 0.349876, 0.379653],
+                [0.272277, 0.349010, 0.378713],
+                [0.271605, 0.348148, 0.380247],
+                [0.270936, 0.347291, 0.381773],
+                [0.270270, 0.348894, 0.380835],
+                [0.269608, 0.350490, 0.379902],
+                [0.271394, 0.349633, 0.378973],
+                [0.270732, 0.348780, 0.380488],
+                [0.270073, 0.347932, 0.381995],
+                [0.269417, 0.349515, 0.381068],
+                [0.271186, 0.348668, 0.380145],
+                [0.270531, 0.347826, 0.381643],
+                [0.269880, 0.346988, 0.383133],
+                [0.269231, 0.346154, 0.384615],
+                [0.268585, 0.347722, 0.383693],
+                [0.267943, 0.346890, 0.385167],
+                [0.267303, 0.346062, 0.386635],
+                [0.266667, 0.345238, 0.388095],
+                [0.266033, 0.344418, 0.389549],
+                [0.265403, 0.345972, 0.388626],
+                [0.264775, 0.345154, 0.390071],
+                [0.266509, 0.344340, 0.389151],
+                [0.265882, 0.345882, 0.388235],
+                [0.265258, 0.347418, 0.387324],
+                [0.264637, 0.346604, 0.388759],
+                [0.264019, 0.345794, 0.390187],
+                [0.265734, 0.344988, 0.389277],
+                [0.265116, 0.346512, 0.388372],
+                [0.264501, 0.345708, 0.389791],
+                [0.266204, 0.344907, 0.388889],
+                [0.265589, 0.344111, 0.390300],
+                [0.264977, 0.343318, 0.391705],
+                [0.264368, 0.344828, 0.390805],
+                [0.263761, 0.346330, 0.389908],
+                [0.265446, 0.345538, 0.389016],
+                [0.264840, 0.347032, 0.388128],
+                [0.266515, 0.346241, 0.387244],
+                [0.265909, 0.347727, 0.386364],
+                [0.267574, 0.346939, 0.385488],
+                [0.266968, 0.348416, 0.384615],
+                [0.266366, 0.349887, 0.383747],
+                [0.268018, 0.349099, 0.382883],
+                [0.267416, 0.350562, 0.382022],
+                [0.269058, 0.349776, 0.381166],
+                [0.268456, 0.348993, 0.382550],
+                [0.267857, 0.348214, 0.383929],
+                [0.267261, 0.349666, 0.383073],
+                [0.268889, 0.348889, 0.382222],
+                [0.268293, 0.350333, 0.381375],
+                [0.269912, 0.349558, 0.380531],
+                [0.269316, 0.350993, 0.379691],
+                [0.270925, 0.350220, 0.378855],
+                [0.270330, 0.351648, 0.378022],
+                [0.269737, 0.353070, 0.377193],
+                [0.269147, 0.352298, 0.378556],
+                [0.268559, 0.353712, 0.377729],
+                [0.267974, 0.355120, 0.376906],
+                [0.269565, 0.354348, 0.376087],
+                [0.268980, 0.353579, 0.377440],
+                [0.268398, 0.352814, 0.378788],
+                [0.269978, 0.352052, 0.377970],
+                [0.269397, 0.353448, 0.377155],
+                [0.270968, 0.352688, 0.376344],
+                [0.270386, 0.354077, 0.375536],
+                [0.269807, 0.355460, 0.374732],
+                [0.269231, 0.356838, 0.373932],
+                [0.268657, 0.358209, 0.373134],
+                [0.268085, 0.359574, 0.372340],
+                [0.269639, 0.358811, 0.371550],
+                [0.269068, 0.358051, 0.372881],
+                [0.268499, 0.357294, 0.374207],
+                [0.267932, 0.356540, 0.375527],
+                [0.267368, 0.357895, 0.374737],
+                [0.266807, 0.359244, 0.373950],
+                [0.268344, 0.358491, 0.373166],
+                [0.269874, 0.357741, 0.372385],
+                [0.269311, 0.359081, 0.371608],
+                [0.270833, 0.358333, 0.370833],
+                [0.270270, 0.359667, 0.370062],
+                [0.269710, 0.360996, 0.369295],
+                [0.269151, 0.362319, 0.368530],
+                [0.268595, 0.361570, 0.369835],
+                [0.270103, 0.360825, 0.369072],
+                [0.269547, 0.360082, 0.370370],
+                [0.268994, 0.359343, 0.371663],
+                [0.270492, 0.358607, 0.370902],
+                [0.269939, 0.359918, 0.370143],
+                [0.271429, 0.359184, 0.369388],
+                [0.272912, 0.358452, 0.368635],
+                [0.272358, 0.357724, 0.369919],
+                [0.271805, 0.356998, 0.371197],
+                [0.271255, 0.358300, 0.370445],
+                [0.272727, 0.357576, 0.369697],
+                [0.274194, 0.356855, 0.368952],
+                [0.273642, 0.358149, 0.368209],
+                [0.273092, 0.357430, 0.369478],
+                [0.272545, 0.356713, 0.370741],
+                [0.274000, 0.356000, 0.370000],
+                [0.273453, 0.355289, 0.371257],
+                [0.272908, 0.354582, 0.372510],
+                [0.272366, 0.353877, 0.373757],
+                [0.271825, 0.355159, 0.373016],
+                [0.273267, 0.354455, 0.372277],
+                [0.272727, 0.355731, 0.371542],
+                [0.274162, 0.355030, 0.370809],
+                [0.273622, 0.356299, 0.370079],
+                [0.275049, 0.355599, 0.369352],
+                [0.274510, 0.356863, 0.368627],
+                [0.273973, 0.356164, 0.369863],
+                [0.273438, 0.355469, 0.371094],
+                [0.272904, 0.354776, 0.372320],
+                [0.272374, 0.354086, 0.373541],
+                [0.271845, 0.353398, 0.374757],
+                [0.273256, 0.352713, 0.374031],
+                [0.272727, 0.353965, 0.373308],
+                [0.272201, 0.355212, 0.372587],
+                [0.273603, 0.354528, 0.371869],
+                [0.273077, 0.353846, 0.373077],
+                [0.272553, 0.353167, 0.374280],
+                [0.272031, 0.354406, 0.373563],
+                [0.271511, 0.355641, 0.372849],
+                [0.270992, 0.356870, 0.372137],
+                [0.272381, 0.356190, 0.371429],
+                [0.271863, 0.355513, 0.372624],
+                [0.271347, 0.354839, 0.373814],
+                [0.270833, 0.354167, 0.375000],
+                [0.270321, 0.353497, 0.376181],
+                [0.269811, 0.354717, 0.375472],
+                [0.269303, 0.355932, 0.374765],
+                [0.268797, 0.357143, 0.374060],
+                [0.268293, 0.358349, 0.373358],
+                [0.267790, 0.359551, 0.372659],
+                [0.269159, 0.358879, 0.371963],
+                [0.268657, 0.360075, 0.371269],
+                [0.268156, 0.361266, 0.370577],
+                [0.269517, 0.360595, 0.369888],
+                [0.269017, 0.359926, 0.371058],
+                [0.270370, 0.359259, 0.370370],
+                [0.269871, 0.360444, 0.369686],
+                [0.269373, 0.361624, 0.369004],
+                [0.268877, 0.362799, 0.368324],
+                [0.270221, 0.362132, 0.367647],
+                [0.269725, 0.363303, 0.366972],
+                [0.269231, 0.364469, 0.366300],
+                [0.270567, 0.363803, 0.365631],
+                [0.270073, 0.363139, 0.366788],
+                [0.269581, 0.364299, 0.366120],
+                [0.269091, 0.365455, 0.365455],
+                [0.268603, 0.366606, 0.364791],
+                [0.269928, 0.365942, 0.364130],
+                [0.269439, 0.365280, 0.365280],
+                [0.268953, 0.364621, 0.366426],
+                [0.268468, 0.363964, 0.367568],
+                [0.267986, 0.363309, 0.368705],
+                [0.267504, 0.364452, 0.368043],
+                [0.268817, 0.363799, 0.367384],
+                [0.268336, 0.364937, 0.366726],
+                [0.269643, 0.364286, 0.366071],
+                [0.269162, 0.363636, 0.367201],
+                [0.270463, 0.362989, 0.366548],
+                [0.271758, 0.362345, 0.365897],
+                [0.271277, 0.363475, 0.365248],
+                [0.270796, 0.364602, 0.364602],
+                [0.272085, 0.363958, 0.363958],
+                [0.271605, 0.363316, 0.365079],
+                [0.271127, 0.364437, 0.364437],
+                [0.272408, 0.363796, 0.363796],
+                [0.271930, 0.364912, 0.363158],
+                [0.273205, 0.364273, 0.362522],
+                [0.272727, 0.363636, 0.363636],
+                [0.272251, 0.364747, 0.363002],
+                [0.273519, 0.364111, 0.362369],
+                [0.273043, 0.365217, 0.361739],
+                [0.274306, 0.364583, 0.361111],
+                [0.275563, 0.363951, 0.360485],
+                [0.275087, 0.363322, 0.361592],
+                [0.274611, 0.364421, 0.360967],
+                [0.275862, 0.363793, 0.360345],
+                [0.275387, 0.364888, 0.359725],
+                [0.276632, 0.364261, 0.359107],
+                [0.276158, 0.365352, 0.358491],
+                [0.275685, 0.364726, 0.359589],
+                [0.275214, 0.364103, 0.360684],
+                [0.276451, 0.363481, 0.360068],
+                [0.275980, 0.362862, 0.361158],
+                [0.275510, 0.362245, 0.362245],
+                [0.275042, 0.361630, 0.363328],
+                [0.274576, 0.362712, 0.362712],
+                [0.275804, 0.362098, 0.362098],
+                [0.277027, 0.361486, 0.361486],
+                [0.276560, 0.362563, 0.360877],
+                [0.277778, 0.361953, 0.360269],
+                [0.277311, 0.363025, 0.359664],
+                [0.276846, 0.364094, 0.359060],
+                [0.276382, 0.365159, 0.358459],
+                [0.277592, 0.364548, 0.357860],
+                [0.277129, 0.365609, 0.357262],
+                [0.278333, 0.365000, 0.356667],
+                [0.277870, 0.364393, 0.357737],
+                [0.277409, 0.363787, 0.358804],
+                [0.278607, 0.363184, 0.358209],
+                [0.278146, 0.362583, 0.359272],
+                [0.279339, 0.361983, 0.358678],
+                [0.278878, 0.363036, 0.358086],
+                [0.280066, 0.362438, 0.357496],
+                [0.281250, 0.361842, 0.356908],
+                [0.282430, 0.361248, 0.356322],
+                [0.281967, 0.360656, 0.357377],
+                [0.281506, 0.361702, 0.356792],
+                [0.282680, 0.361111, 0.356209],
+                [0.282219, 0.360522, 0.357259],
+                [0.281759, 0.359935, 0.358306],
+                [0.281301, 0.360976, 0.357724],
+                [0.282468, 0.360390, 0.357143],
+                [0.282010, 0.359806, 0.358185],
+                [0.281553, 0.360841, 0.357605],
+                [0.282714, 0.360258, 0.357027],
+                [0.283871, 0.359677, 0.356452],
+                [0.283414, 0.360709, 0.355878],
+                [0.284566, 0.360129, 0.355305],
+                [0.284109, 0.361156, 0.354735],
+                [0.283654, 0.362179, 0.354167],
+                [0.283200, 0.363200, 0.353600],
+                [0.282748, 0.364217, 0.353035],
+                [0.283892, 0.363636, 0.352472],
+                [0.285032, 0.363057, 0.351911],
+                [0.286169, 0.362480, 0.351351],
+                [0.285714, 0.361905, 0.352381],
+                [0.285261, 0.362916, 0.351823],
+                [0.284810, 0.363924, 0.351266],
+                [0.285940, 0.363349, 0.350711],
+                [0.285489, 0.364353, 0.350158],
+                [0.285039, 0.365354, 0.349606],
+                [0.286164, 0.364780, 0.349057],
+                [0.285714, 0.364207, 0.350078],
+                [0.285266, 0.365204, 0.349530],
+                [0.286385, 0.364632, 0.348983],
+                [0.285938, 0.364063, 0.350000],
+                [0.285491, 0.363495, 0.351014],
+                [0.285047, 0.362928, 0.352025],
+                [0.284603, 0.363919, 0.351477],
+                [0.284161, 0.364907, 0.350932],
+                [0.285271, 0.364341, 0.350388],
+                [0.284830, 0.365325, 0.349845],
+                [0.284389, 0.366306, 0.349304],
+                [0.283951, 0.365741, 0.350309],
+                [0.283513, 0.365177, 0.351310],
+                [0.283077, 0.364615, 0.352308],
+                [0.284178, 0.364055, 0.351767],
+                [0.285276, 0.363497, 0.351227],
+                [0.286371, 0.362940, 0.350689],
+                [0.285933, 0.363914, 0.350153],
+                [0.285496, 0.364885, 0.349618],
+                [0.285061, 0.365854, 0.349085],
+                [0.286149, 0.365297, 0.348554],
+                [0.287234, 0.364742, 0.348024],
+                [0.286798, 0.364188, 0.349014],
+                [0.286364, 0.365152, 0.348485],
+                [0.285930, 0.366112, 0.347958],
+                [0.287009, 0.365559, 0.347432],
+                [0.288084, 0.365008, 0.346908],
+                [0.289157, 0.364458, 0.346386],
+                [0.288722, 0.365414, 0.345865],
+                [0.288288, 0.364865, 0.346847],
+                [0.287856, 0.364318, 0.347826],
+                [0.287425, 0.365269, 0.347305],
+                [0.288490, 0.364723, 0.346786],
+                [0.289552, 0.364179, 0.346269],
+                [0.290611, 0.363636, 0.345753],
+                [0.290179, 0.363095, 0.346726],
+                [0.289747, 0.362556, 0.347697],
+                [0.289318, 0.363501, 0.347181],
+                [0.288889, 0.364444, 0.346667],
+                [0.289941, 0.363905, 0.346154],
+                [0.289513, 0.363368, 0.347120],
+                [0.289086, 0.362832, 0.348083],
+                [0.288660, 0.363770, 0.347570],
+                [0.288235, 0.364706, 0.347059],
+                [0.289280, 0.364170, 0.346549],
+                [0.288856, 0.365103, 0.346041],
+                [0.288433, 0.366032, 0.345534],
+                [0.288012, 0.366959, 0.345029],
+                [0.287591, 0.367883, 0.344526],
+                [0.288630, 0.367347, 0.344023],
+                [0.288210, 0.368268, 0.343523],
+                [0.287791, 0.369186, 0.343023],
+                [0.288824, 0.368650, 0.342525],
+                [0.289855, 0.368116, 0.342029],
+                [0.289436, 0.367583, 0.342981],
+                [0.290462, 0.367052, 0.342486],
+                [0.290043, 0.367965, 0.341991],
+                [0.291066, 0.367435, 0.341499],
+                [0.292086, 0.366906, 0.341007],
+                [0.291667, 0.366379, 0.341954],
+                [0.292683, 0.365854, 0.341463],
+                [0.292264, 0.365330, 0.342407],
+                [0.291845, 0.364807, 0.343348],
+                [0.291429, 0.365714, 0.342857],
+                [0.291013, 0.366619, 0.342368],
+                [0.290598, 0.367521, 0.341880],
+                [0.291607, 0.366999, 0.341394],
+                [0.291193, 0.367898, 0.340909],
+                [0.292199, 0.367376, 0.340426],
+                [0.291785, 0.366856, 0.341360],
+                [0.291372, 0.366337, 0.342291],
+                [0.290960, 0.365819, 0.343220],
+                [0.290550, 0.366714, 0.342736],
+                [0.290141, 0.367606, 0.342254],
+                [0.289733, 0.368495, 0.341772],
+                [0.289326, 0.369382, 0.341292],
+                [0.290323, 0.368864, 0.340813],
+                [0.291317, 0.368347, 0.340336],
+                [0.290909, 0.369231, 0.339860],
+                [0.290503, 0.370112, 0.339385],
+                [0.291492, 0.369596, 0.338912],
+                [0.291086, 0.370474, 0.338440],
+                [0.292072, 0.369958, 0.337969],
+                [0.291667, 0.369444, 0.338889],
+                [0.291262, 0.368932, 0.339806],
+                [0.290859, 0.369806, 0.339335],
+                [0.290456, 0.370678, 0.338866],
+                [0.290055, 0.371547, 0.338398],
+                [0.291034, 0.371034, 0.337931],
+                [0.290634, 0.370523, 0.338843],
+                [0.290234, 0.370014, 0.339752],
+                [0.289835, 0.369505, 0.340659],
+                [0.289438, 0.368999, 0.341564],
+                [0.289041, 0.368493, 0.342466],
+                [0.288646, 0.367989, 0.343365],
+                [0.288251, 0.368852, 0.342896],
+                [0.289222, 0.368349, 0.342428],
+                [0.288828, 0.367847, 0.343324],
+                [0.288435, 0.367347, 0.344218],
+                [0.288043, 0.366848, 0.345109],
+                [0.287653, 0.366350, 0.345997],
+                [0.287263, 0.365854, 0.346883],
+                [0.286874, 0.365359, 0.347767],
+                [0.286486, 0.364865, 0.348649],
+                [0.286100, 0.364372, 0.349528],
+                [0.285714, 0.363881, 0.350404],
+                [0.285330, 0.364738, 0.349933],
+                [0.284946, 0.365591, 0.349462],
+                [0.285906, 0.365101, 0.348993],
+                [0.285523, 0.365952, 0.348525],
+                [0.286479, 0.365462, 0.348059],
+                [0.286096, 0.366310, 0.347594],
+                [0.287049, 0.365821, 0.347130],
+                [0.286667, 0.366667, 0.346667],
+                [0.287617, 0.366178, 0.346205],
+                [0.287234, 0.365691, 0.347074],
+                [0.286853, 0.365206, 0.347942],
+                [0.286472, 0.364721, 0.348806],
+                [0.286093, 0.364238, 0.349669],
+                [0.285714, 0.365079, 0.349206],
+                [0.285337, 0.364597, 0.350066],
+                [0.286280, 0.364116, 0.349604],
+                [0.285903, 0.363636, 0.350461],
+                [0.285526, 0.363158, 0.351316],
+                [0.285151, 0.362681, 0.352168],
+                [0.284777, 0.363517, 0.351706],
+                [0.284404, 0.363041, 0.352556],
+                [0.284031, 0.362565, 0.353403],
+                [0.283660, 0.362092, 0.354248],
+                [0.283290, 0.361619, 0.355091],
+                [0.282920, 0.362451, 0.354628],
+                [0.283854, 0.361979, 0.354167],
+                [0.283485, 0.362809, 0.353706],
+                [0.283117, 0.363636, 0.353247],
+                [0.282750, 0.363165, 0.354086],
+                [0.282383, 0.362694, 0.354922],
+                [0.282018, 0.362225, 0.355757],
+                [0.281654, 0.363049, 0.355297],
+                [0.282581, 0.362581, 0.354839],
+                [0.282216, 0.362113, 0.355670],
+                [0.281853, 0.361647, 0.356499],
+                [0.281491, 0.361183, 0.357326],
+                [0.281130, 0.362003, 0.356868],
+                [0.280769, 0.361538, 0.357692],
+                [0.280410, 0.362356, 0.357234],
+                [0.281330, 0.361893, 0.356777],
+                [0.280971, 0.361430, 0.357599],
+                [0.281888, 0.360969, 0.357143],
+                [0.281529, 0.361783, 0.356688],
+                [0.282443, 0.361323, 0.356234],
+                [0.282084, 0.362135, 0.355781],
+                [0.282995, 0.361675, 0.355330],
+                [0.282636, 0.362484, 0.354880],
+                [0.282278, 0.362025, 0.355696],
+                [0.281922, 0.361568, 0.356511],
+                [0.281566, 0.361111, 0.357323],
+                [0.281211, 0.361917, 0.356873],
+                [0.280856, 0.362720, 0.356423],
+                [0.280503, 0.363522, 0.355975],
+                [0.281407, 0.363065, 0.355528],
+                [0.281054, 0.362610, 0.356336],
+                [0.280702, 0.362155, 0.357143],
+                [0.280350, 0.361702, 0.357947],
+                [0.280000, 0.362500, 0.357500],
+                [0.280899, 0.362047, 0.357054],
+                [0.280549, 0.362843, 0.356608],
+                [0.281445, 0.362391, 0.356164],
+                [0.281095, 0.361940, 0.356965],
+                [0.280745, 0.361491, 0.357764],
+                [0.280397, 0.361042, 0.358561],
+                [0.280050, 0.360595, 0.359356],
+                [0.279703, 0.360149, 0.360149],
+                [0.279357, 0.360939, 0.359703],
+                [0.279012, 0.361728, 0.359259],
+                [0.278668, 0.362515, 0.358816],
+                [0.279557, 0.362069, 0.358374],
+                [0.279213, 0.362854, 0.357934],
+                [0.280098, 0.362408, 0.357494],
+                [0.279755, 0.363190, 0.357055],
+                [0.279412, 0.363971, 0.356618],
+                [0.279070, 0.364749, 0.356181],
+                [0.278729, 0.365526, 0.355746],
+                [0.278388, 0.365079, 0.356532],
+                [0.278049, 0.364634, 0.357317],
+                [0.277710, 0.364190, 0.358100],
+                [0.277372, 0.363747, 0.358881],
+                [0.277035, 0.363305, 0.359660],
+                [0.276699, 0.362864, 0.360437],
+                [0.276364, 0.362424, 0.361212],
+                [0.276029, 0.363196, 0.360775],
+                [0.276904, 0.362757, 0.360339],
+                [0.276570, 0.363527, 0.359903],
+                [0.276236, 0.364294, 0.359469],
+                [0.275904, 0.365060, 0.359036],
+                [0.275572, 0.365824, 0.358604],
+                [0.276442, 0.365385, 0.358173],
+                [0.276110, 0.364946, 0.358944],
+                [0.275779, 0.364508, 0.359712],
+                [0.275449, 0.365269, 0.359281],
+                [0.275120, 0.366029, 0.358852],
+                [0.275986, 0.365591, 0.358423],
+                [0.275656, 0.365155, 0.359189],
+                [0.275328, 0.365912, 0.358760],
+                [0.276190, 0.365476, 0.358333],
+                [0.275862, 0.366231, 0.357907],
+                [0.276722, 0.365796, 0.357482],
+                [0.276394, 0.365362, 0.358244],
+                [0.276066, 0.364929, 0.359005],
+                [0.275740, 0.365680, 0.358580],
+                [0.276596, 0.365248, 0.358156],
+                [0.276269, 0.365998, 0.357733],
+                [0.275943, 0.366745, 0.357311],
+                [0.276796, 0.366313, 0.356890],
+                [0.276471, 0.367059, 0.356471],
+                [0.276146, 0.367803, 0.356052],
+                [0.275822, 0.368545, 0.355634],
+                [0.276671, 0.368113, 0.355217],
+                [0.276347, 0.368852, 0.354801],
+                [0.276023, 0.369591, 0.354386],
+                [0.275701, 0.370327, 0.353972],
+                [0.276546, 0.369895, 0.353559],
+                [0.276224, 0.369464, 0.354312],
+                [0.275902, 0.370198, 0.353900],
+                [0.276744, 0.369767, 0.353488],
+                [0.276423, 0.370499, 0.353078],
+                [0.276102, 0.371230, 0.352668],
+                [0.276941, 0.370800, 0.352260],
+                [0.276620, 0.371528, 0.351852],
+                [0.277457, 0.371098, 0.351445],
+                [0.277136, 0.371824, 0.351039],
+                [0.276817, 0.371396, 0.351788],
+                [0.276498, 0.370968, 0.352535],
+                [0.276180, 0.371692, 0.352129],
+                [0.277011, 0.371264, 0.351724],
+                [0.276693, 0.370838, 0.352468],
+                [0.276376, 0.370413, 0.353211],
+                [0.276060, 0.371134, 0.352806],
+                [0.275744, 0.371854, 0.352403],
+                [0.275429, 0.372571, 0.352000],
+                [0.275114, 0.373288, 0.351598],
+                [0.275941, 0.372862, 0.351197],
+                [0.276765, 0.372437, 0.350797],
+                [0.276451, 0.373151, 0.350398],
+                [0.277273, 0.372727, 0.350000],
+                [0.276958, 0.373439, 0.349603],
+                [0.277778, 0.373016, 0.349206],
+                [0.277463, 0.372593, 0.349943],
+                [0.277149, 0.372172, 0.350679],
+                [0.276836, 0.372881, 0.350282],
+                [0.276524, 0.373589, 0.349887],
+                [0.276212, 0.374295, 0.349493],
+                [0.275901, 0.375000, 0.349099],
+                [0.276715, 0.374578, 0.348706],
+                [0.276404, 0.374157, 0.349438],
+                [0.276094, 0.373737, 0.350168],
+                [0.275785, 0.373318, 0.350897],
+                [0.275476, 0.372900, 0.351624],
+                [0.275168, 0.373602, 0.351230],
+                [0.275978, 0.373184, 0.350838],
+                [0.275670, 0.372768, 0.351562],
+                [0.275362, 0.372352, 0.352285],
+                [0.276169, 0.371938, 0.351893],
+                [0.275862, 0.372636, 0.351502],
+                [0.276667, 0.372222, 0.351111],
+                [0.276360, 0.372919, 0.350721],
+                [0.277162, 0.372506, 0.350333],
+                [0.277962, 0.372093, 0.349945],
+                [0.277655, 0.371681, 0.350664],
+                [0.277348, 0.372376, 0.350276],
+                [0.277042, 0.373068, 0.349890],
+                [0.277839, 0.372657, 0.349504],
+                [0.277533, 0.373348, 0.349119],
+                [0.277228, 0.372937, 0.349835],
+                [0.276923, 0.372527, 0.350549],
+                [0.276619, 0.372119, 0.351262],
+                [0.276316, 0.371711, 0.351974],
+                [0.277108, 0.371303, 0.351588],
+                [0.276805, 0.371991, 0.351204],
+                [0.277596, 0.371585, 0.350820],
+                [0.277293, 0.372271, 0.350437],
+                [0.278081, 0.371865, 0.350055],
+                [0.277778, 0.371460, 0.350763],
+                [0.278564, 0.371055, 0.350381],
+                [0.278261, 0.370652, 0.351087],
+                [0.277959, 0.370250, 0.351792],
+                [0.277657, 0.369848, 0.352495],
+                [0.277356, 0.369447, 0.353196],
+                [0.277056, 0.369048, 0.353896],
+                [0.276757, 0.369730, 0.353514],
+                [0.277538, 0.369330, 0.353132],
+                [0.277238, 0.368932, 0.353830],
+                [0.278017, 0.368534, 0.353448],
+                [0.277718, 0.369214, 0.353068],
+                [0.278495, 0.368817, 0.352688],
+                [0.278195, 0.369495, 0.352309],
+                [0.277897, 0.370172, 0.351931],
+                [0.278671, 0.369775, 0.351554],
+                [0.278373, 0.370450, 0.351178],
+                [0.278075, 0.371123, 0.350802],
+                [0.277778, 0.371795, 0.350427],
+                [0.277481, 0.371398, 0.351121],
+                [0.277186, 0.371002, 0.351812],
+                [0.276890, 0.370607, 0.352503],
+                [0.276596, 0.370213, 0.353191],
+                [0.276302, 0.369819, 0.353879],
+                [0.276008, 0.370488, 0.353503],
+                [0.276776, 0.370095, 0.353128],
+                [0.276483, 0.369703, 0.353814],
+                [0.276190, 0.369312, 0.354497],
+                [0.275899, 0.368922, 0.355180],
+                [0.275607, 0.369588, 0.354805],
+                [0.275316, 0.369198, 0.355485],
+                [0.275026, 0.369863, 0.355111],
+                [0.275789, 0.369474, 0.354737],
+                [0.275499, 0.369085, 0.355415],
+                [0.275210, 0.368697, 0.356092],
+                [0.274921, 0.369360, 0.355719],
+                [0.275681, 0.368973, 0.355346],
+                [0.275393, 0.369634, 0.354974],
+                [0.276151, 0.369247, 0.354603],
+                [0.275862, 0.369906, 0.354232],
+                [0.276618, 0.369520, 0.353862],
+                [0.276330, 0.370177, 0.353493],
+                [0.276042, 0.369792, 0.354167],
+                [0.275754, 0.369407, 0.354839],
+                [0.275468, 0.369023, 0.355509],
+                [0.275182, 0.368640, 0.356179],
+                [0.274896, 0.368257, 0.356846],
+                [0.274611, 0.367876, 0.357513],
+                [0.274327, 0.368530, 0.357143],
+                [0.275078, 0.368149, 0.356774],
+                [0.274793, 0.367769, 0.357438],
+                [0.274510, 0.368421, 0.357069],
+                [0.275258, 0.368041, 0.356701],
+                [0.274974, 0.367662, 0.357364],
+                [0.275720, 0.367284, 0.356996],
+                [0.275437, 0.367934, 0.356629],
+                [0.276181, 0.367556, 0.356263],
+                [0.275897, 0.367179, 0.356923],
+                [0.275615, 0.367828, 0.356557],
+                [0.275333, 0.368475, 0.356192],
+                [0.276074, 0.368098, 0.355828],
+                [0.275792, 0.368744, 0.355465],
+                [0.275510, 0.369388, 0.355102],
+                [0.276249, 0.369011, 0.354740],
+                [0.275967, 0.368635, 0.355397],
+                [0.275687, 0.368260, 0.356053],
+                [0.275407, 0.367886, 0.356707],
+                [0.275127, 0.367513, 0.357360],
+                [0.274848, 0.367140, 0.358012],
+                [0.274569, 0.366768, 0.358663],
+                [0.274291, 0.367409, 0.358300],
+                [0.275025, 0.367037, 0.357937],
+                [0.274747, 0.367677, 0.357576],
+                [0.275479, 0.367306, 0.357215],
+                [0.275202, 0.366935, 0.357863],
+                [0.274924, 0.366566, 0.358510],
+                [0.274648, 0.367203, 0.358149],
+                [0.274372, 0.367839, 0.357789],
+                [0.274096, 0.368474, 0.357430],
+                [0.274824, 0.368104, 0.357071],
+                [0.274549, 0.367735, 0.357715],
+                [0.274274, 0.367367, 0.358358],
+                [0.274000, 0.367000, 0.359000]
+            ];
+
+            // Éléments DOM
+            const speedSlider = document.getElementById('speedSlider');
+            const speedValue = document.getElementById('speedValue');
+            const stepSlider = document.getElementById('stepSlider');
+            const stepValue = document.getElementById('stepValue');
+            const playButton = document.getElementById('playButton');
+            const pauseButton = document.getElementById('pauseButton');
+            const resetButton = document.getElementById('resetButton');
+            const terminal = document.getElementById('terminal');
+            const terreStat = document.getElementById('terreStat');
+            const luneStat = document.getElementById('luneStat');
+            const marsStat = document.getElementById('marsStat');
+            // Couleurs pour le graphique
+            const colors = ['#28a745', '#17a2b8', '#dc3545'];
+            const labels = ['Terre', 'Lune', 'Mars'];
+            // Configuration du graphique
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 1000}, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'Terre',
+                            data: cumulativeStats.map(stat => stat[0]),
+                            borderColor: colors[0],
+                            backgroundColor: colors[0] + '33',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Lune',
+                            data: cumulativeStats.map(stat => stat[1]),
+                            borderColor: colors[1],
+                            backgroundColor: colors[1] + '33',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Mars',
+                            data: cumulativeStats.map(stat => stat[2]),
+                            borderColor: colors[2],
+                            backgroundColor: colors[2] + '33',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    animation: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 1,
+                            title: {
+                                display: true,
+                                text: 'Probabilité'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Étape'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+
+            // Variables pour l'animation
+            let currentStep = 0;
+            let isPlaying = false;
+            let animationInterval;
+            let speed = 50; // ms par étape
+
+            // Fonction pour ajouter une ligne au terminal
+            function addTerminalLine(text, className = '') {
+                const line = document.createElement('p');
+                line.className = 'terminal-line';
+                if (className) {
+                    line.innerHTML = `Étape ${currentStep + 1}: <span class="${className}">${text}</span>`;
+                } else {
+                    line.textContent = text;
+                }
+                terminal.appendChild(line);
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+
+            // Fonction pour obtenir la classe CSS pour un état
+            function getStateClass(state) {
+                switch(state) {
+                    case 0: return 'terra';
+                    case 1: return 'lune';
+                    case 2: return 'mars';
+                    default: return '';
+                }
+            }
+
+            // Fonction pour obtenir le nom d'un état
+            function getStateName(state) {
+                switch(state) {
+                    case 0: return 'Terre';
+                    case 1: return 'Lune';
+                    case 2: return 'Mars';
+                    default: return 'Inconnu';
+                }
+            }
+
+            // Fonction pour mettre à jour l'affichage à une étape donnée
+            function updateDisplay(step) {
+                // Mettre à jour le slider
+                stepSlider.value = step + 1;
+                stepValue.textContent = step + 1;
+
+                // Mettre à jour les statistiques
+                terreStat.textContent = cumulativeStats[step][0].toFixed(2);
+                luneStat.textContent = cumulativeStats[step][1].toFixed(2);
+                marsStat.textContent = cumulativeStats[step][2].toFixed(2);
+
+                // Mettre à jour le graphique
+                chart.data.datasets.forEach((dataset, i) => {
+                    dataset.data = cumulativeStats.slice(0, step + 1).map(stat => stat[i]);
+                });
+                chart.data.labels = Array.from({length: step + 1}, (_, i) => i + 1);
+                chart.update();
+
+                // Mettre en évidence l'état actuel dans la séquence
+                document.querySelectorAll('.state-indicator').forEach((el, i) => {
+                    if (i <= step) {
+                        el.style.opacity = '1';
+                    } else {
+                        el.style.opacity = '0.2';
+                    }
+                });
+                // Ajouter une ligne au terminal si c'est une nouvelle étape
+                if (step > 0) {
+                    const prevState = sequence[step-1];
+                    const currentState = sequence[step];
+                    const prevStateName = getStateName(prevState);
+                    const currentStateName = getStateName(currentState);
+                    const stateClass = getStateClass(currentState);
+                    
+                    const text = `Transition: ${prevStateName} → ${currentStateName}`;
+                    addTerminalLine(text, stateClass);
+                }
+            }
+
+            // Fonction pour jouer l'animation
+            function playSim() {
+                if (isPlaying) return;
+                isPlaying = true;
+                
+                if (currentStep === 0) {
+                    // Ajouter la ligne initiale au terminal
+                    const initialState = sequence[0];
+                    const stateName = getStateName(initialState);
+                    const stateClass = getStateClass(initialState);
+                    addTerminalLine(`État initial: ${stateName}`, stateClass);
+                }
+                animationInterval = setInterval(() => {
+                    if (currentStep < 1000 - 1) {
+                        currentStep++;
+                        updateDisplay(currentStep);
+                    } else {
+                        clearInterval(animationInterval);
+                        isPlaying = false;
+                        addTerminalLine('Simulation terminée.', '');
+                    }
+                }, 105 - speed);
+            }
+
+            // Fonction pour mettre en pause l'animation
+            function pauseSim() {
+                if (!isPlaying) return;
+                clearInterval(animationInterval);
+                isPlaying = false;
+                addTerminalLine('Simulation en pause.', '');
+            }
+
+            // Fonction pour réinitialiser l'animation
+            function resetSim() {
+                pauseSim();
+                currentStep = 0;
+                updateDisplay(currentStep);
+                
+                // Effacer le terminal sauf les premières lignes d'initialisation
+                while (terminal.childElementCount > 3) {
+                    terminal.removeChild(terminal.lastChild);
+                }
+                addTerminalLine('Simulation réinitialisée.', '');
+            }
+
+            // Gestionnaires d'événements
+            playButton.addEventListener('click', playSim);
+            pauseButton.addEventListener('click', pauseSim);
+            resetButton.addEventListener('click', resetSim);
+
+            speedSlider.addEventListener('input', (e) => {
+                speed = e.target.value;
+                speedValue.textContent = speed;
+                if (isPlaying) {
+                    pauseSim();
+                    playSim();
+                }
+            });
+
+            stepSlider.addEventListener('input', (e) => {
+                pauseSim();
+                currentStep = parseInt(e.target.value) - 1;
+                updateDisplay(currentStep);
+            });
+
+            resetSim();
+        </script>
+    </div>
+</body>
+</html>

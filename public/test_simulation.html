@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation d'une chaîne de Markov sur 100 étapes</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .state-indicator {
+            width: 2px;
+            height: 20px;
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .slider-container label {
+            margin-right: 10px;
+            width: 150px;
+        }
+        .slider-value {
+            margin-left: 10px;
+            width: 50px;
+        }
+        .state-sequence {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin: 10px 0;
+            height: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+        .terminal {
+            background-color: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .terminal-line {
+            margin: 0;
+            line-height: 1.2;
+        }
+        .terminal-prompt {
+            color: #0088ff;
+        }
+        .terra {
+            color: #28a745;
+        }
+        .lune {
+            color: #17a2b8;
+        }
+        .mars {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Simulation d'une chaîne de Markov sur 100 étapes</h1>
+        <p><strong>État initial :</strong> Terre</p>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Contrôles de la simulation</h5>
+                <div class="controls">
+                    <div class="slider-container">
+                        <label for="speedSlider">Vitesse de simulation :</label>
+                        <input type="range" id="speedSlider" min="1" max="100" value="50" class="form-range">
+                        <span class="slider-value" id="speedValue">50</span>
+                    </div>
+                    <div class="slider-container">
+                        <label for="stepSlider">Étape actuelle :</label>
+                        <input type="range" id="stepSlider" min="1" max="100" value="1" class="form-range">
+                        <span class="slider-value" id="stepValue">1</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="playButton" class="btn btn-primary">Lecture</button>
+                        <button id="pauseButton" class="btn btn-secondary">Pause</button>
+                        <button id="resetButton" class="btn btn-danger">Réinitialiser</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Terminal en temps réel</h5>
+                <div class="terminal" id="terminal">
+                    <p class="terminal-line"><span class="terminal-prompt">robot@cosmos:~$</span> ./simulate_markov.sh Terre 100</p>
+                    <p class="terminal-line">Initialisation de la simulation avec état initial: <span class="terra">Terre</span></p>
+                    <p class="terminal-line">Début de la simulation...</p>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Séquence d'états</h5>
+                <div class="state-sequence" id="stateSequence">
+                    <div class="state-indicator" id="state-0" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-1" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-2" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-3" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-4" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-5" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-6" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-7" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-8" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-9" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-10" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-11" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-12" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-13" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-14" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-15" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-16" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-17" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-18" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-19" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-20" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-21" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-22" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-23" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-24" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-25" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-26" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-27" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-28" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-29" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-30" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-31" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-32" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-33" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-34" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-35" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-36" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-37" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-38" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-39" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-40" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-41" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-42" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-43" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-44" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-45" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-46" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-47" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-48" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-49" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-50" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-51" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-52" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-53" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-54" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-55" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-56" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-57" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-58" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-59" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-60" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-61" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-62" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-63" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-64" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-65" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-66" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-67" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-68" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-69" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-70" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-71" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-72" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-73" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-74" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-75" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-76" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-77" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-78" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-79" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-80" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-81" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-82" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-83" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-84" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-85" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-86" style="background-color: #28a745;"></div>
+                    <div class="state-indicator" id="state-87" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-88" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-89" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-90" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-91" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-92" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-93" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-94" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-95" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-96" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-97" style="background-color: #dc3545;"></div>
+                    <div class="state-indicator" id="state-98" style="background-color: #17a2b8;"></div>
+                    <div class="state-indicator" id="state-99" style="background-color: #17a2b8;"></div>
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-success me-2">Terre</span>
+                    <span class="badge bg-info me-2">Lune</span>
+                    <span class="badge bg-danger me-2">Mars</span>
+                </div>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Évolution des probabilités</h5>
+                <div class="chart-container">
+                    <canvas id="statsChart"></canvas>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Terre</h5>
+                                <p class="card-text fs-4" id="terreStat">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Lune</h5>
+                                <p class="card-text fs-4" id="luneStat">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Mars</h5>
+                                <p class="card-text fs-4" id="marsStat">0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            // Données de la séquence
+            const sequence = [
+                0,
+                0,
+                2,
+                1,
+                1,
+                2,
+                2,
+                0,
+                1,
+                1,
+                2,
+                2,
+                1,
+                1,
+                1,
+                2,
+                0,
+                2,
+                1,
+                1,
+                2,
+                1,
+                0,
+                1,
+                1,
+                2,
+                0,
+                2,
+                0,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                2,
+                2,
+                0,
+                2,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                2,
+                2,
+                2,
+                2,
+                2,
+                1,
+                2,
+                0,
+                2,
+                0,
+                1,
+                2,
+                2,
+                2,
+                0,
+                1,
+                1,
+                2,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                2,
+                2,
+                0,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                2,
+                1,
+                1,
+                2,
+                1,
+                1
+            ];
+
+            // Données des statistiques cumulatives
+            const cumulativeStats = [
+                [1.000000, 0.000000, 0.000000],
+                [1.000000, 0.000000, 0.000000],
+                [0.666667, 0.000000, 0.333333],
+                [0.500000, 0.250000, 0.250000],
+                [0.400000, 0.400000, 0.200000],
+                [0.333333, 0.333333, 0.333333],
+                [0.285714, 0.285714, 0.428571],
+                [0.375000, 0.250000, 0.375000],
+                [0.333333, 0.333333, 0.333333],
+                [0.300000, 0.400000, 0.300000],
+                [0.272727, 0.363636, 0.363636],
+                [0.250000, 0.333333, 0.416667],
+                [0.230769, 0.384615, 0.384615],
+                [0.214286, 0.428571, 0.357143],
+                [0.200000, 0.466667, 0.333333],
+                [0.187500, 0.437500, 0.375000],
+                [0.235294, 0.411765, 0.352941],
+                [0.222222, 0.388889, 0.388889],
+                [0.210526, 0.421053, 0.368421],
+                [0.200000, 0.450000, 0.350000],
+                [0.190476, 0.428571, 0.380952],
+                [0.181818, 0.454545, 0.363636],
+                [0.217391, 0.434783, 0.347826],
+                [0.208333, 0.458333, 0.333333],
+                [0.200000, 0.480000, 0.320000],
+                [0.192308, 0.461538, 0.346154],
+                [0.222222, 0.444444, 0.333333],
+                [0.214286, 0.428571, 0.357143],
+                [0.241379, 0.413793, 0.344828],
+                [0.266667, 0.400000, 0.333333],
+                [0.258065, 0.419355, 0.322581],
+                [0.250000, 0.437500, 0.312500],
+                [0.242424, 0.454545, 0.303030],
+                [0.235294, 0.470588, 0.294118],
+                [0.228571, 0.485714, 0.285714],
+                [0.222222, 0.500000, 0.277778],
+                [0.216216, 0.513514, 0.270270],
+                [0.210526, 0.526316, 0.263158],
+                [0.205128, 0.512821, 0.282051],
+                [0.200000, 0.500000, 0.300000],
+                [0.219512, 0.487805, 0.292683],
+                [0.214286, 0.476190, 0.309524],
+                [0.209302, 0.488372, 0.302326],
+                [0.204545, 0.500000, 0.295455],
+                [0.222222, 0.488889, 0.288889],
+                [0.217391, 0.500000, 0.282609],
+                [0.212766, 0.510638, 0.276596],
+                [0.208333, 0.520833, 0.270833],
+                [0.204082, 0.530612, 0.265306],
+                [0.200000, 0.540000, 0.260000],
+                [0.196078, 0.549020, 0.254902],
+                [0.192308, 0.557692, 0.250000],
+                [0.188679, 0.566038, 0.245283],
+                [0.185185, 0.555556, 0.259259],
+                [0.181818, 0.545455, 0.272727],
+                [0.178571, 0.535714, 0.285714],
+                [0.175439, 0.526316, 0.298246],
+                [0.172414, 0.517241, 0.310345],
+                [0.169492, 0.525424, 0.305085],
+                [0.166667, 0.516667, 0.316667],
+                [0.180328, 0.508197, 0.311475],
+                [0.177419, 0.500000, 0.322581],
+                [0.190476, 0.492063, 0.317460],
+                [0.187500, 0.500000, 0.312500],
+                [0.184615, 0.492308, 0.323077],
+                [0.181818, 0.484848, 0.333333],
+                [0.179104, 0.477612, 0.343284],
+                [0.191176, 0.470588, 0.338235],
+                [0.188406, 0.478261, 0.333333],
+                [0.185714, 0.485714, 0.328571],
+                [0.183099, 0.478873, 0.338028],
+                [0.180556, 0.486111, 0.333333],
+                [0.178082, 0.493151, 0.328767],
+                [0.175676, 0.500000, 0.324324],
+                [0.173333, 0.506667, 0.320000],
+                [0.171053, 0.513158, 0.315789],
+                [0.168831, 0.519481, 0.311688],
+                [0.166667, 0.512821, 0.320513],
+                [0.164557, 0.506329, 0.329114],
+                [0.175000, 0.500000, 0.325000],
+                [0.185185, 0.493827, 0.320988],
+                [0.182927, 0.500000, 0.317073],
+                [0.180723, 0.506024, 0.313253],
+                [0.178571, 0.511905, 0.309524],
+                [0.176471, 0.517647, 0.305882],
+                [0.174419, 0.523256, 0.302326],
+                [0.183908, 0.517241, 0.298851],
+                [0.181818, 0.522727, 0.295455],
+                [0.179775, 0.528090, 0.292135],
+                [0.177778, 0.533333, 0.288889],
+                [0.175824, 0.538462, 0.285714],
+                [0.173913, 0.543478, 0.282609],
+                [0.172043, 0.548387, 0.279570],
+                [0.170213, 0.553191, 0.276596],
+                [0.168421, 0.547368, 0.284211],
+                [0.166667, 0.552083, 0.281250],
+                [0.164948, 0.556701, 0.278351],
+                [0.163265, 0.551020, 0.285714],
+                [0.161616, 0.555556, 0.282828],
+                [0.160000, 0.560000, 0.280000]
+            ];
+
+            // Éléments DOM
+            const speedSlider = document.getElementById('speedSlider');
+            const speedValue = document.getElementById('speedValue');
+            const stepSlider = document.getElementById('stepSlider');
+            const stepValue = document.getElementById('stepValue');
+            const playButton = document.getElementById('playButton');
+            const pauseButton = document.getElementById('pauseButton');
+            const resetButton = document.getElementById('resetButton');
+            const terminal = document.getElementById('terminal');
+            const terreStat = document.getElementById('terreStat');
+            const luneStat = document.getElementById('luneStat');
+            const marsStat = document.getElementById('marsStat');
+            // Couleurs pour le graphique
+            const colors = ['#28a745', '#17a2b8', '#dc3545'];
+            const labels = ['Terre', 'Lune', 'Mars'];
+            // Configuration du graphique
+            const ctx = document.getElementById('statsChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 100}, (_, i) => i + 1),
+                    datasets: [
+                        {
+                            label: 'Terre',
+                            data: cumulativeStats.map(stat => stat[0]),
+                            borderColor: colors[0],
+                            backgroundColor: colors[0] + '33',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Lune',
+                            data: cumulativeStats.map(stat => stat[1]),
+                            borderColor: colors[1],
+                            backgroundColor: colors[1] + '33',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Mars',
+                            data: cumulativeStats.map(stat => stat[2]),
+                            borderColor: colors[2],
+                            backgroundColor: colors[2] + '33',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    animation: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 1,
+                            title: {
+                                display: true,
+                                text: 'Probabilité'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Étape'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+
+            // Variables pour l'animation
+            let currentStep = 0;
+            let isPlaying = false;
+            let animationInterval;
+            let speed = 50; // ms par étape
+
+            // Fonction pour ajouter une ligne au terminal
+            function addTerminalLine(text, className = '') {
+                const line = document.createElement('p');
+                line.className = 'terminal-line';
+                if (className) {
+                    line.innerHTML = `Étape ${currentStep + 1}: <span class="${className}">${text}</span>`;
+                } else {
+                    line.textContent = text;
+                }
+                terminal.appendChild(line);
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+
+            // Fonction pour obtenir la classe CSS pour un état
+            function getStateClass(state) {
+                switch(state) {
+                    case 0: return 'terra';
+                    case 1: return 'lune';
+                    case 2: return 'mars';
+                    default: return '';
+                }
+            }
+
+            // Fonction pour obtenir le nom d'un état
+            function getStateName(state) {
+                switch(state) {
+                    case 0: return 'Terre';
+                    case 1: return 'Lune';
+                    case 2: return 'Mars';
+                    default: return 'Inconnu';
+                }
+            }
+
+            // Fonction pour mettre à jour l'affichage à une étape donnée
+            function updateDisplay(step) {
+                // Mettre à jour le slider
+                stepSlider.value = step + 1;
+                stepValue.textContent = step + 1;
+
+                // Mettre à jour les statistiques
+                terreStat.textContent = cumulativeStats[step][0].toFixed(2);
+                luneStat.textContent = cumulativeStats[step][1].toFixed(2);
+                marsStat.textContent = cumulativeStats[step][2].toFixed(2);
+
+                // Mettre à jour le graphique
+                chart.data.datasets.forEach((dataset, i) => {
+                    dataset.data = cumulativeStats.slice(0, step + 1).map(stat => stat[i]);
+                });
+                chart.data.labels = Array.from({length: step + 1}, (_, i) => i + 1);
+                chart.update();
+
+                // Mettre en évidence l'état actuel dans la séquence
+                document.querySelectorAll('.state-indicator').forEach((el, i) => {
+                    if (i <= step) {
+                        el.style.opacity = '1';
+                    } else {
+                        el.style.opacity = '0.2';
+                    }
+                });
+                // Ajouter une ligne au terminal si c'est une nouvelle étape
+                if (step > 0) {
+                    const prevState = sequence[step-1];
+                    const currentState = sequence[step];
+                    const prevStateName = getStateName(prevState);
+                    const currentStateName = getStateName(currentState);
+                    const stateClass = getStateClass(currentState);
+                    
+                    const text = `Transition: ${prevStateName} → ${currentStateName}`;
+                    addTerminalLine(text, stateClass);
+                }
+            }
+
+            // Fonction pour jouer l'animation
+            function playSim() {
+                if (isPlaying) return;
+                isPlaying = true;
+                
+                if (currentStep === 0) {
+                    // Ajouter la ligne initiale au terminal
+                    const initialState = sequence[0];
+                    const stateName = getStateName(initialState);
+                    const stateClass = getStateClass(initialState);
+                    addTerminalLine(`État initial: ${stateName}`, stateClass);
+                }
+                animationInterval = setInterval(() => {
+                    if (currentStep < 100 - 1) {
+                        currentStep++;
+                        updateDisplay(currentStep);
+                    } else {
+                        clearInterval(animationInterval);
+                        isPlaying = false;
+                        addTerminalLine('Simulation terminée.', '');
+                    }
+                }, 105 - speed);
+            }
+
+            // Fonction pour mettre en pause l'animation
+            function pauseSim() {
+                if (!isPlaying) return;
+                clearInterval(animationInterval);
+                isPlaying = false;
+                addTerminalLine('Simulation en pause.', '');
+            }
+
+            // Fonction pour réinitialiser l'animation
+            function resetSim() {
+                pauseSim();
+                currentStep = 0;
+                updateDisplay(currentStep);
+                
+                // Effacer le terminal sauf les premières lignes d'initialisation
+                while (terminal.childElementCount > 3) {
+                    terminal.removeChild(terminal.lastChild);
+                }
+                addTerminalLine('Simulation réinitialisée.', '');
+            }
+
+            // Gestionnaires d'événements
+            playButton.addEventListener('click', playSim);
+            pauseButton.addEventListener('click', pauseSim);
+            resetButton.addEventListener('click', resetSim);
+
+            speedSlider.addEventListener('input', (e) => {
+                speed = e.target.value;
+                speedValue.textContent = speed;
+                if (isPlaying) {
+                    pauseSim();
+                    playSim();
+                }
+            });
+
+            stepSlider.addEventListener('input', (e) => {
+                pauseSim();
+                currentStep = parseInt(e.target.value) - 1;
+                updateDisplay(currentStep);
+            });
+
+            resetSim();
+        </script>
+    </div>
+</body>
+</html>
