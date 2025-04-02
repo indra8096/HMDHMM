@@ -2,19 +2,21 @@
 
 import os
 import subprocess
+import sys
 
-def afficher_sequence_avec_indices(sequence, largeur_ligne=60):
-    AA = list("ACDEFGHIKLMNPQRSTUVWYX")
+def afficher_sequence_avec_indices(sequence, titre, largeur_ligne=60):
+    AA = list("_ACDEFGHIKLMNPQRSTVWYX")
     sequence = 'X' * 40 + sequence
     sequence = sequence.replace(' ', 'X') #remplace les espaces par X
-    for i in range(0, len(sequence), 20):
-        bloc = sequence[i:i+20]
+    for i in range(0, len(sequence), 40):
+        bloc = sequence[i:i+40]
+        
         print(f"Position: {i+1}-{i+len(bloc)}")
-        print("seq","  ", end="")
+        print(titre[:11]," | ", end="")
         for aa in bloc:
             print(f" {aa} │", end="")
         print()
-        print("obs","  ", end="")
+        print(titre[:11]," | ", end="")
         for aa in bloc:
             try:
                 index = AA.index(aa)
@@ -26,7 +28,7 @@ def afficher_sequence_avec_indices(sequence, largeur_ligne=60):
 
 def sequence_to_obs_file(sequence, nom_fichier):
     
-    AA = list("ACDEFGHIKLMNPQRSTUVWYX")
+    AA = list("_ACDEFGHIKLMNPQRSTVWYX")
     sequence = 'X' * 40 + sequence
     sequence = sequence.replace(' ', 'X')
     observations = []
@@ -82,7 +84,6 @@ def executer_testvit(modele, fichier_obs):
         print(f"Erreur inattendue : {str(e)}")
 
 def lister_modeles_hmm(repertoire="."):
-
     extensions_possibles = [".hmm", ".mod", ".model", ".txt"]
     modeles = []
     
@@ -96,8 +97,40 @@ def lister_modeles_hmm(repertoire="."):
         print(f"Erreur lors de la recherche de modèles : {str(e)}")
         return []
 
+def afficher_aide():
+    print("Usage: python convertisseur.py <fichier_fasta> [options]")
+    print("\nOptions:")
+    print("  --obs <fichier>     Génère un fichier d'observations")
+    print("  --testvit <modele>  Exécute testvit avec le modèle et les observations")
+    print("\nExemple:")
+    print("  python convertisseur.py sequence.fasta --obs observations.txt --testvit modele.hmm")
+    sys.exit(1)
+
 if __name__ == "__main__":
-    chemin_fichier = input("Donne la seq fasta : ")
+    if len(sys.argv) < 2:
+        afficher_aide()
+    
+    # Récupérer le chemin du fichier FASTA (premier argument)
+    chemin_fichier = sys.argv[1]
+    
+    # Options par défaut
+    fichier_obs = None
+    modele_hmm = None
+    
+    # Analyser les autres arguments
+    i = 2
+    while i < len(sys.argv):
+        if sys.argv[i] == "--obs" and i + 1 < len(sys.argv):
+            fichier_obs = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--testvit" and i + 1 < len(sys.argv):
+            modele_hmm = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--help" or sys.argv[i] == "-h":
+            afficher_aide()
+        else:
+            print(f"Option inconnue: {sys.argv[i]}")
+            afficher_aide()
     
     try:
         with open(chemin_fichier, "r") as f:
@@ -110,58 +143,24 @@ if __name__ == "__main__":
                     titre = ligne[1:]
                 else:
                     sequence += ligne.strip()
-            
             if titre:
                 print(f"=== {titre} ===\n")
-            
-            afficher_sequence_avec_indices(sequence)
-            
-            generer_fichier = input("Générer un fichier d'obs ? (o/n) : ").lower()
-            
-            fichier_obs = None
-            if generer_fichier == 'o' or generer_fichier == 'oui':
-                nom_fichier = input("Nom du fichier de sortie pour les obs : ")
-                if sequence_to_obs_file(sequence, nom_fichier):
-                    fichier_obs = nom_fichier
-            
+            afficher_sequence_avec_indices(sequence, titre)
             if fichier_obs:
-                executer_testvit_option = input("Souhaites tu exécuter testvit avec ces observations ? (o/n) : ").lower()
-                if executer_testvit_option == 'o' or executer_testvit_option == 'oui':
-                    print("\nModèles HMM disponibles :")
-                    modeles = lister_modeles_hmm()
-                    
-                    if modeles:
-                        print("Modèles trouvés :")
-                        for i, modele in enumerate(modeles, 1):
-                            print(f"{i}. {modele}")
-                        
-                        choix = input("\nEntre le numéro du modèle à utiliser ou le chemin d'un autre modèle : ")
-                        
-                        try:
-                            index = int(choix) - 1
-                            if 0 <= index < len(modeles):
-                                modele_choisi = modeles[index]
-                            else:
-                                print("Numéro invalide, spécifier un chemin manuellement.")
-                                modele_choisi = input("Chemin du modèle HMM : ")
-                        except ValueError:
-                            modele_choisi = choix
-
-                        executer_testvit(modele_choisi, fichier_obs)
-                    else:
-                        print("Aucun modèle trouvé.")
-                        modele_choisi = input("Chemin vers un modèle HMM : ")
-                        executer_testvit(modele_choisi, fichier_obs)
+                if sequence_to_obs_file(sequence, fichier_obs):
+                    if modele_hmm:
+                        executer_testvit(modele_hmm, fichier_obs)
             
             print("\n=== Légende ===")
             legend = []
-            for i, aa in enumerate(list("ACDEFGHIKLMNPQRSTUVWYX")):
+            for i, aa in enumerate(list("_ACDEFGHIKLMNPQRSTVWYX")):
                 legend.append(f"{aa}={i}")
             print(" ".join(legend))
             
     except FileNotFoundError:
-        print(f"Erreur : Le file'{chemin_fichier}' n'a pas été trouvé.")
+        print(f"Erreur : Le fichier '{chemin_fichier}' n'a pas été trouvé.")
     except Exception as e:
         print(f"Erreur : {str(e)}")
+        raise
 
 
