@@ -1,6 +1,20 @@
 def fasta_to_numeric():
   AA = list("ACDEFGHIKLMNPQRSTVWYX")
-  seq = "AADDFGHIK"
+  
+  # test
+  sequence_file = input("fichier sequence : ")
+  with open(sequence_file, 'r') as f:
+    for line in f:
+      line = line.strip()
+      if line.startswith('>'):
+        name = line[1:]
+        sequence = []
+      else:
+        sequence.append(line)
+    sequence = ''.join(sequence)
+    print(sequence)
+        
+  seq = "AADDFFHHKK"
   for s in seq: print(AA.index(s),end=' ')
 
 def numeric_to_fasta():

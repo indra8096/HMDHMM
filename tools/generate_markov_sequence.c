@@ -43,7 +43,6 @@ State next_state(State current_state) {
         }
     }
     
-    // En cas d'erreur d'arrondi, retourner le dernier état
     return NUM_STATES - 1;
 }
 
