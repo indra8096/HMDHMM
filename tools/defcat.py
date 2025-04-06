@@ -37,6 +37,7 @@ def convertisseur(file):
                 if sequence_title:
                     temp_file_path = store_numeric_sequence_in_temp_file(all_numeric_sequence, sequence_title)
                     print(f"\nContenu du fichier temporaire {temp_file_path} :")
+                    temp_files.append(temp_file_path) 
                     with open(temp_file_path, "r") as temp_file:
                         print(temp_file.read())
                 # Nouvelle séquence, réinitialiser les variables
@@ -93,12 +94,10 @@ def main():
     #print(MySeq)  #premier exo 
     print(Conv)   #second exo
 
+    #exo 3
     for temp_file in temp_files:
         result_file = run_testvit(model, temp_file)
         print(result_file)
-
-
-
 
 if __name__ == "__main__":
     main()
