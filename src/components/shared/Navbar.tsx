@@ -50,6 +50,11 @@ export function Navbar() {
                                 Documentation
                             </Link>
                         </li>
+                        <li className="nav-item">
+                            <Link href="/ia-agents" className={`nav-link ${isActive('/ia-agents')}`}>
+                                Agent IA
+                            </Link>
+                        </li>
                     </ul>
                 </div>
             </div>

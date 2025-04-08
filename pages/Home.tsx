@@ -6,7 +6,7 @@ import { HMMProblems } from '../src/components/hmm/HMMProblems';
 import { HMMApplications } from '../src/components/hmm/HMMApplications';
 import { VideoSection } from '../src/components/shared/VideoSection';
 
-export const Home: React.FC = () => {
+const Home: React.FC = () => {
     return (
         <>
             <Navbar />
@@ -24,4 +24,6 @@ export const Home: React.FC = () => {
             </main>
         </>
     );
-}; 
+};
+
+export default Home; 
