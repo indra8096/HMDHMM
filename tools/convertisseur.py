@@ -8,10 +8,10 @@ import re
 
 def afficher_sequence_avec_indices(sequence, titre, largeur_ligne=60):
     AA = list("_ACDEFGHIKLMNPQRSTVWYX")
-    sequence = 'X' * 40 + sequence
+    sequence = 'X' * 45 + sequence
     sequence = sequence.replace(' ', 'X') #remplace les espaces par X
-    for i in range(0, len(sequence), 40):
-        bloc = sequence[i:i+40]
+    for i in range(0, len(sequence), 45):
+        bloc = sequence[i:i+45]
         
         print(f"Position: {i+1}-{i+len(bloc)}")
         print(titre[:11]," | ", end="")

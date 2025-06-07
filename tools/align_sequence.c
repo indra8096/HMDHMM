@@ -5,12 +5,12 @@
 void format_alignment(char *name, char *sequence, int *numeric);
 
 
-#define WIDTH 80 //longeur d'affichage
-const char *AA = "ACDEFGHIKLMNPQRSTVWYX"; //21 AA 
+#define WIDTH 80 
+const char *AA = "ACDEFGHIKLMNPQRSTVWYX";
 
 typedef struct {
     char name[100];
-    char *sequence;  //pointeur vers la séquence
+    char *sequence;  //poit
 } Sequence;
 
 

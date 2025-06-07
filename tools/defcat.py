@@ -5,15 +5,20 @@ import subprocess
 
 """
 Nom du script : defcat.py
-Description   : 
+Description   : python3 convertisseur.py <fichier_fasta> <modele_hmm>
 Auteur        : Guillaume Rosin
 Date          : 06/04/2025
 Version       : 1.0
+
+MISE A JOUR : 07/06/2025
+Version       : 1.1
+Description   : 
 """
+
 
 AA = "_ACDEFGHIKLMNPQRSTVWYX"
 
-def read_fasta_seq(file):
+def read_fasta_seq(file): #me permet de lire le fichier fasta
     with open(file, "r") as seq:
         sequence = seq.read()
     return sequence
@@ -21,7 +26,7 @@ def read_fasta_seq(file):
 def store_numeric_sequence_in_temp_file(numeric_sequence, sequence_title):
     with tempfile.NamedTemporaryFile(mode='w', delete=False, prefix=f"{sequence_title}_") as temp_file:
         num_values = len(numeric_sequence)
-        temp_file.write(f"T= {num_values}\n")# Ajouter T
+        temp_file.write(f"T= {num_values}\n")# Ajouter T= pour le nombre de valeurs
         temp_file.write(" ".join(str(n) for n in numeric_sequence))
     return temp_file.name
 
@@ -61,12 +66,18 @@ def convertisseur(file):
                 print(f"{title[:15]}   {aa_line}")
                 print(f"{title[:15]}   {aligned_numeric}")
                 print()
+                print()
+                print("probabilités d'alignement :")
+                print()
+
+
         if sequence_title:
             temp_file_path = store_numeric_sequence_in_temp_file(all_numeric_sequence, sequence_title)
             temp_files.append(temp_file_path)
             print(f"\nContenu du dernier fichier temporaire {temp_file_path} :")
             with open(temp_file_path, "r") as temp_file:
                 print(temp_file.read())
+                print()
     return temp_files
 
 def run_testvit(modele_file, obs_file):
@@ -83,6 +94,12 @@ def run_testvit(modele_file, obs_file):
                 print(preview)
         return temp_file.name
 
+
+def alignement_des_sequences(file):
+    print("alignement des sequences :")     
+    print()
+
+    
 def main():
     file = sys.argv[1]
     model = sys.argv[2]
