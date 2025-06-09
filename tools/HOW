@@ -1,0 +1,11 @@
+Comment évaluer un alignement ?
+
+Score de similarité = 
+somme des scores des comparaisons individuelles entre les résidus alignés des deux séquences.
+
+J'utilise la matrice de subsitutions : Blosum62
+
+https://www.youtube.com/watch?v=itcuvvuGqrE : 15:58
+
+
+
